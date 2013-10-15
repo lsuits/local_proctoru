@@ -1,5 +1,5 @@
 {
-  "moodle-block_proctoru-regreport": {
+  "moodle-local_proctoru-regreport": {
     "requires": [
         "datatable",
         "datatable-scroll"

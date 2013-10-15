@@ -4,6 +4,34 @@ global $CFG;
 require_once $CFG->libdir . '/filelib.php';
 require_once($CFG->dirroot.'/user/filters/profilefield.php');
 require_once($CFG->dirroot.'/user/filters/yesno.php');
+require_once 'Cronlib.php';
+
+function local_proctoru_cron() {
+
+    if (get_config('local_proctoru','bool_cron' == 1)) {
+        mtrace("got here");
+        mtrace(sprintf("Running ProctorU cron tasks"));
+        $cron = new ProctorUCronProcessor();
+
+        //get users without status (new users)
+        list($unreg,$exempt) = $cron->objPartitionUsersWithoutStatus();
+
+        //set appropriate status for new users
+        $intUnreg = $cron->intSetStatusForUser($unreg, ProctorU::UNREGISTERED);
+        mtrace(sprintf("Set status %s for %d of %d unregistered users.",ProctorU::UNREGISTERED, $intUnreg, count($unreg)));
+
+        $intExempt = $cron->intSetStatusForUser($exempt, ProctorU::EXEMPT);
+        mtrace(sprintf("Set status %s for %d of %d unregistered users.",ProctorU::EXEMPT, $intExempt, count($exempt)));
+
+        $needProcessing = $cron->objGetUnverifiedUsers();
+        mtrace(sprintf("Begin processing user status for %d users", count($needProcessing)));
+
+        $cron->blnProcessUsers($needProcessing);
+    } else {
+        mtrace("Skipping ProctorU");
+    }
+    return true;
+}
 
 class ProctorU {
 
@@ -18,13 +46,21 @@ class ProctorU {
     const PU_NOT_FOUND  = -404;
         
     public function __construct() {
-        $this->localWebservicesCredentialsUrl = get_config('block_proctoru', 'credentials_location');
-        $this->localWebservicesUrl            = get_config('block_proctoru', 'localwebservice_url');
+        
+        $fieldParams = array(
+            'shortname' => get_string('profilefield_shortname', 'local_proctoru'),
+            'categoryid' => 1,
+        );  
+        self::default_profile_field($fieldParams);
+
+        
+        $this->localWebservicesCredentialsUrl = get_config('local_proctoru', 'credentials_location');
+        $this->localWebservicesUrl            = get_config('local_proctoru', 'localwebservice_url');
     }
 
     public static function strMapStatusToLangString($status){
         $_s = function($str){
-            return get_string($str, 'block_proctoru');
+            return get_string($str, 'local_proctoru');
         };
         
         $map = array(
@@ -51,8 +87,8 @@ class ProctorU {
         if (!$field = $DB->get_record('user_info_field', $params)) {
             $field              = new stdClass;
             $field->shortname   = $params['shortname'];
-            $field->name        = get_string($field->shortname, 'block_proctoru');
-            $field->description = get_string('profilefield_shortname', 'block_proctoru');
+            $field->name        = get_string($field->shortname, 'local_proctoru');
+            $field->description = get_string('profilefield_shortname', 'local_proctoru');
             $field->descriptionformat = 1;
             $field->datatype    = 'text';
             $field->categoryid  = $params['categoryid'];
@@ -72,7 +108,7 @@ class ProctorU {
      * @return string shortname of the custom field in the DB
      */
     public static function strFieldname() {
-        return "user_".get_config('block_proctoru','profilefield_shortname');
+        return "user_".get_config('local_proctoru','profilefield_shortname');
     }
     
     /**
@@ -128,7 +164,7 @@ class ProctorU {
     
     public static function blnUserHasExemptRole($userid){
         global $DB;
-        $exemptRoleIds = get_config('block_proctoru', 'roleselection');
+        $exemptRoleIds = get_config('local_proctoru', 'roleselection');
         $sql = "SELECT id
                 FROM {role_assignments} 
                 WHERE roleid IN ({$exemptRoleIds}) AND userid = {$userid}";
@@ -205,7 +241,7 @@ public static function partial_get_users_listing($status= null,$sort='lastaccess
     }else{
         //figure out which field key the filter function uses for our field
         $fieldKey = null;
-        $fieldShortname = "user_".get_config('block_proctoru', 'profilefield_shortname');
+        $fieldShortname = "user_".get_config('local_proctoru', 'profilefield_shortname');
         foreach($proFilter->get_profile_fields() as $k=>$sn){
             if($sn == $fieldShortname){
                 $fieldKey = $k;
@@ -268,7 +304,7 @@ public static function partial_get_users_listing($status= null,$sort='lastaccess
      */
     public static function objGetExemptRoles(){
         global $DB;
-        $rolesConfig = get_config('block_proctoru', 'roleselection');
+        $rolesConfig = get_config('local_proctoru', 'roleselection');
         return $DB->get_records_list('role', 'id', explode(',', $rolesConfig));
     }
 

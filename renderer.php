@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Renderer for block proctoru
+ * Renderer for local proctoru
  *
- * @package    block_proctoru
+ * @package    local_proctoru
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -25,22 +25,17 @@ defined('MOODLE_INTERNAL') || die;
 require_once $CFG->libdir.'/tablelib.php';
 require_once 'lib.php';
 /**
- * proctoru verification status block rendrer
+ * proctoru verification status local rendrer
  *
- * @package    block_proctoru
+ * @package    local_proctoru
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class block_proctoru_renderer extends plugin_renderer_base {
-    
-    public function getUnregisteredMessage(){
-        $output = get_string('not_registered', 'block_proctoru');
-        return $output;
-    }
-    
+class local_proctoru_renderer extends plugin_renderer_base {
+
     public function render_registration_report(registration_report $report) {
         $this->page->requires->yui_module(
-            'moodle-block_proctoru-regreport', 
-            'M.block_proctoru.regreport.init',
+            'moodle-local_proctoru-regreport', 
+            'M.local_proctoru.regreport.init',
             array(array_values($report->data))
             ); 
         

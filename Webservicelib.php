@@ -44,7 +44,7 @@ class CurlXmlClient {
 class CredentialsClient extends CurlXmlClient {
 
     public function __construct() {
-        $baseUrl   = get_config('block_proctoru', 'credentials_location');
+        $baseUrl   = get_config('local_proctoru', 'credentials_location');
         $method    = 'post';
         $options   = array('cache' => true);
 
@@ -60,7 +60,7 @@ class LocalDataStoreClient extends CurlXmlClient {
 
     public function __construct() {
 
-        $baseUrl = get_config('block_proctoru', 'localwebservice_url');
+        $baseUrl = get_config('local_proctoru', 'localwebservice_url');
         $method = 'get';
         $options = array();
 
@@ -90,9 +90,9 @@ class LocalDataStoreClient extends CurlXmlClient {
     public function blnUserExists($idnumber) {
         mtrace(sprintf("check user %sexists in DAS", $idnumber));
         $this->addParams();
-        $this->params['serviceId'] = get_config('block_proctoru', 'localwebservice_userexists_servicename');
+        $this->params['serviceId'] = get_config('local_proctoru', 'localwebservice_userexists_servicename');
         $this->params['1'] = $idnumber;
-        $this->params['2'] = get_config('block_proctoru', 'stu_profile');
+        $this->params['2'] = get_config('local_proctoru', 'stu_profile');
 
         $xml = $this->xmlFetchResponse();
         
@@ -106,7 +106,7 @@ class LocalDataStoreClient extends CurlXmlClient {
     public function intPseudoId($idnumber){
         mtrace(sprintf("fetch PseudoID from DAS for user %s", $idnumber));
         $this->addParams();
-        $this->params['serviceId'] = get_config('block_proctoru', 'localwebservice_fetchuser_servicename');
+        $this->params['serviceId'] = get_config('local_proctoru', 'localwebservice_fetchuser_servicename');
         $this->params['1'] = $idnumber;
 
         $xml = $this->xmlFetchResponse();
@@ -122,7 +122,7 @@ class ProctorUClient extends CurlXmlClient {
     static $errorCount;
     
     public function __construct(){
-        $baseUrl   = get_config('block_proctoru', 'proctoru_api');
+        $baseUrl   = get_config('local_proctoru', 'proctoru_api');
         $method    = 'get';
         $options   = array('cache' => true);
         parent::__construct($baseUrl, $method, $options);
@@ -135,7 +135,7 @@ class ProctorUClient extends CurlXmlClient {
         $url   = $this->baseUrl.'/'.$serviceName;
         $meth  = $this->method;
         $curl  = new curl($this->options);
-        $token = get_config('block_proctoru', 'proctoru_token');
+        $token = get_config('local_proctoru', 'proctoru_token');
 
         $curl->setHeader(sprintf('Authorization-Token: %s', $token));
         $this->params = array(
@@ -185,7 +185,7 @@ class ProctorUClient extends CurlXmlClient {
 //        $this->options += $dloadOptions;
         
         $curl  = new curl($this->options);
-        $token = get_config('block_proctoru', 'proctoru_token');
+        $token = get_config('local_proctoru', 'proctoru_token');
 
         $curl->setHeader(sprintf('Authorization-Token: %s', $token));
         $this->params = array(

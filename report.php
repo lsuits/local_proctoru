@@ -27,7 +27,7 @@ global $CFG,$PAGE;
 require_login();
 $context = get_context_instance(CONTEXT_SYSTEM);
 $PAGE->set_context($context);
-$PAGE->set_url(new moodle_url('/blocks/proctoru/report.php'));
+$PAGE->set_url(new moodle_url('/local/proctoru/report.php'));
 $PAGE->set_pagelayout('admin');
 $PAGE->set_course($SITE);
 $PAGE->set_title('Reg title');
@@ -36,7 +36,7 @@ $PAGE->navbar->add('Nav');
 
 if(is_siteadmin($USER)){
 
-    $output = $PAGE->get_renderer('block_proctoru');
+    $output = $PAGE->get_renderer('local_proctoru');
     $reportData = new registration_report();
     echo $output->header();
     echo $output->render($reportData);

@@ -1,7 +1,7 @@
-YUI.add('moodle-block_proctoru-regreport', function (Y, NAME) {
+YUI.add('moodle-local_proctoru-regreport', function (Y, NAME) {
 
-M.block_proctoru = M.block_proctoru || {};
-M.block_proctoru.regreport = {
+M.local_proctoru = M.local_proctoru || {};
+M.local_proctoru.regreport = {
   init: function(data) {
 
     var table = new Y.DataTable({

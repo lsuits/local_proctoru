@@ -1,8 +1,8 @@
 <?php
 global $CFG;
-require_once $CFG->dirroot . '/blocks/proctoru/lib.php';
-require_once $CFG->dirroot . '/blocks/proctoru/Cronlib.php';
-require_once $CFG->dirroot . '/blocks/proctoru/tests/conf/ConfigProctorU.php';
+require_once $CFG->dirroot . '/local/proctoru/lib.php';
+require_once $CFG->dirroot . '/local/proctoru/Cronlib.php';
+require_once $CFG->dirroot . '/local/proctoru/tests/conf/ConfigProctorU.php';
 require_once $CFG->dirroot . '/enrol/externallib.php';
 
 abstract class abstract_testcase extends advanced_testcase{
@@ -40,10 +40,10 @@ abstract class abstract_testcase extends advanced_testcase{
 //        $this->enrolUsers();
 
         $this->assertNotEmpty($DB->get_record('user_info_field',array('shortname' => 'user_proctoru')));
-        $this->assertNotEmpty(get_config('block_proctoru','localwebservice_url'));
+        $this->assertNotEmpty(get_config('local_proctoru','localwebservice_url'));
         
         $this->assertNotEmpty($this->pu->localWebservicesUrl);
-        $this->assertInternalType('string', get_config('block_proctoru','localwebservice_url'));
+        $this->assertInternalType('string', get_config('local_proctoru','localwebservice_url'));
         $this->assertInternalType('string', $this->pu->localWebservicesUrl);
         
     }
@@ -100,7 +100,7 @@ abstract class abstract_testcase extends advanced_testcase{
     
     protected function setProfileField($userid, $value){
         global $DB;
-        $shortname = "user_".get_config('block_proctoru', 'profilefield_shortname');
+        $shortname = "user_".get_config('local_proctoru', 'profilefield_shortname');
         
         //create profile field
         $fieldParams = array(
@@ -205,15 +205,15 @@ abstract class abstract_testcase extends advanced_testcase{
     protected function setClientMode($client, $mode){
         if($client instanceof LocalDataStoreClient){
             if($mode == 'prod'){
-                set_config('localwebservice_url',  $this->conf->config[5][1], 'block_proctoru');
-                set_config('credentials_location', $this->conf->config[4][1], 'block_proctoru');
+                set_config('localwebservice_url',  $this->conf->config[5][1], 'local_proctoru');
+                set_config('credentials_location', $this->conf->config[4][1], 'local_proctoru');
 
                 $this->cron->localDataStore = new LocalDataStoreClient();
                 $this->assertEquals($this->conf->config[5][1],$this->cron->localDataStore->baseUrl);
             }
             else{
-                set_config('localwebservice_url',  $this->conf->config[6][1], 'block_proctoru');
-                set_config('credentials_location', $this->conf->config[3][1], 'block_proctoru');
+                set_config('localwebservice_url',  $this->conf->config[6][1], 'local_proctoru');
+                set_config('credentials_location', $this->conf->config[3][1], 'local_proctoru');
 
                 $this->cron->localDataStore = new LocalDataStoreClient();
                 $this->assertEquals($this->conf->config[6][1],$this->cron->localDataStore->baseUrl);
@@ -221,12 +221,12 @@ abstract class abstract_testcase extends advanced_testcase{
 
         }else{
             if($mode == 'prod'){
-                set_config('proctoru_api', $this->conf->config[12][1], 'block_proctoru');
+                set_config('proctoru_api', $this->conf->config[12][1], 'local_proctoru');
 
                 $this->cron->puClient = new ProctorUClient();
                 $this->assertEquals($this->conf->config[12][1],$this->cron->puClient->baseUrl);
             }else{
-                set_config('proctoru_api', $this->conf->config[11][1], 'block_proctoru');
+                set_config('proctoru_api', $this->conf->config[11][1], 'local_proctoru');
 
                 $this->cron->puClient = new ProctorUClient();
                 $this->assertEquals($this->conf->config[11][1],$this->cron->puClient->baseUrl);

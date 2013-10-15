@@ -1,8 +1,8 @@
 <?php
 global $CFG;
-require_once $CFG->dirroot . '/blocks/proctoru/lib.php';
-require_once $CFG->dirroot . '/blocks/proctoru/tests/abstract_testcase.php';
-require_once $CFG->dirroot . '/blocks/proctoru/tests/conf/ConfigProctorU.php';
+require_once $CFG->dirroot . '/local/proctoru/lib.php';
+require_once $CFG->dirroot . '/local/proctoru/tests/abstract_testcase.php';
+require_once $CFG->dirroot . '/local/proctoru/tests/conf/ConfigProctorU.php';
 
 class ProctorU_testcase extends abstract_testcase{
     
@@ -11,12 +11,12 @@ class ProctorU_testcase extends abstract_testcase{
         parent::setup();
         global $DB;
         //map lookup is a little anonymous; refactor the map to make semantic sense
-        $this->assertEquals($this->conf->config[1][1], get_config('block_proctoru','roleselection'));
+        $this->assertEquals($this->conf->config[1][1], get_config('local_proctoru','roleselection'));
         $this->assertNotEmpty($DB->get_record('user_info_field',array('shortname' => 'user_proctoru')));
-        $this->assertNotEmpty(get_config('block_proctoru','localwebservice_url'));
+        $this->assertNotEmpty(get_config('local_proctoru','localwebservice_url'));
         
         $this->assertNotEmpty($this->pu->localWebservicesUrl);
-        $this->assertInternalType('string', get_config('block_proctoru','localwebservice_url'));
+        $this->assertInternalType('string', get_config('local_proctoru','localwebservice_url'));
         $this->assertInternalType('string', $this->pu->localWebservicesUrl);
     }
 
@@ -33,7 +33,7 @@ class ProctorU_testcase extends abstract_testcase{
     
     public function test_intCustomFieldID(){
         global $DB;
-        $conf = get_config('block_proctoru',$this->conf->config[2][0]);
+        $conf = get_config('local_proctoru',$this->conf->config[2][0]);
         $id   = $DB->get_field('user_info_field','id',array('shortname' => "user_".$conf));
         $this->assertEquals($id, ProctorU::intCustomFieldID());
     }
@@ -101,7 +101,7 @@ class ProctorU_testcase extends abstract_testcase{
     }
     
     public function test_objGetExemptRoles(){
-        $config = explode(',',get_config('block_proctoru', 'roleselection'));
+        $config = explode(',',get_config('local_proctoru', 'roleselection'));
         $unit   = $this->pu->objGetExemptRoles();
 
         $this->assertEquals(count($config), count($unit));

@@ -1,9 +1,9 @@
 <?php
 global $CFG;
-require_once $CFG->dirroot . '/blocks/proctoru/lib.php';
-require_once $CFG->dirroot . '/blocks/proctoru/Cronlib.php';
-require_once $CFG->dirroot . '/blocks/proctoru/tests/conf/ConfigProctorU.php';
-require_once $CFG->dirroot . '/blocks/proctoru/tests/abstract_testcase.php';
+require_once $CFG->dirroot . '/local/proctoru/lib.php';
+require_once $CFG->dirroot . '/local/proctoru/Cronlib.php';
+require_once $CFG->dirroot . '/local/proctoru/tests/conf/ConfigProctorU.php';
+require_once $CFG->dirroot . '/local/proctoru/tests/abstract_testcase.php';
 
 class ProctorUCronProcessor_testcase extends abstract_testcase{
 

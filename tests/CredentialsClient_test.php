@@ -1,8 +1,8 @@
 <?php
 
 global $CFG;
-require_once $CFG->dirroot . '/blocks/proctoru/Webservicelib.php';
-require_once $CFG->dirroot . '/blocks/proctoru/tests/conf/ConfigProctorU.php';
+require_once $CFG->dirroot . '/local/proctoru/Webservicelib.php';
+require_once $CFG->dirroot . '/local/proctoru/tests/conf/ConfigProctorU.php';
 
 class CredentialsClient_testcase extends advanced_testcase {
 
