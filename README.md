@@ -14,7 +14,7 @@ separate disparate concerns, they have become independent of each other. `local_
 the `Sentinel` interface and can be used as one of `block_sentinel`'s client classes; to add this
 module to `block_sentinel`, include `local_proctoru` in its `clients` admin settings list.
 
-##Instalation
+##Installation
 Installation is the same for this as for any Moodle local plugin. Add to you `<SiteRoot>/local` directory
 and navigate to the _Notifications_ page.
 
