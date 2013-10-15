@@ -21,7 +21,7 @@ $string['cron_run']  = 'Cron';
 $string['cron_desc'] = 'Run with Cron?';
 
 // custom profile field
-$string['profilefield_shortname'] = "user_proctoru";
+$string['profilefield_shortname'] = "Custom role name";
 $string['profilefield_shortname_description'] = "Name of the custom profile field";
 $string['user_proctoru'] = "ProctorU Registration status";
 
@@ -41,7 +41,7 @@ $string['credentials_location_description'] = 'Location of local webservices cre
 $string['localwebservice_url'] = 'local Webservices URL';
 $string['localwebservice_url_description'] = "URL for the local users' webservice";
 
-$string['localwebservice_fetchuser_servicename'] = 'User Profile service name';
+$string['localwebservice_fetchuser_servicename'] = 'User ID service name';
 $string['localwebservice_fetchuser_servicename_description'] = "Source for user profile information";
 
 $string['localwebservice_userexists_servicename'] = 'User Profile service name';
