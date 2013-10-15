@@ -58,6 +58,9 @@ class ProctorU {
         $this->localWebservicesUrl            = get_config('local_proctoru', 'localwebservice_url');
     }
 
+    /**
+     * for a given const status, returns a human-freindly string
+     */
     public static function strMapStatusToLangString($status){
         $_s = function($str){
             return get_string($str, 'local_proctoru');
@@ -397,6 +400,29 @@ public static function partial_get_users_listing($status= null,$sort='lastaccess
             $exempt += ProctorU::partial_get_users_listing_by_roleid($roleid);
         }
         return $exempt;
+    }
+    
+    public static function dbrGetUserCountByStatus() {
+        global $DB;
+        $sql = "
+            SELECT data, count(userid) AS count 
+            FROM {user_info_data}
+            WHERE fieldid = :fieldid 
+            GROUP BY data;
+            ";
+        return $DB->get_records_sql($sql, array('fieldid'=>self::intCustomFieldID()));
+    }
+    
+    /**
+     * returns an associative array of status names to user counts
+     * @param array $dbr such as that returned from self::dbrGetUserCountByStatus
+     */
+    public static function mapRawUserCountToFriendlyNames(array $dbr){
+        $friendly = array();
+        foreach($dbr as $status => $count){
+            $friendly[self::strMapStatusToLangString($status)] = $count;
+        }
+        return $friendly;
     }
 }
 ?>

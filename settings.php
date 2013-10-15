@@ -1,17 +1,41 @@
 <?php
 
 defined('MOODLE_INTERNAL') || die;
-global $DB;
+
+require_once $CFG->dirroot.'/local/proctoru/lib.php';
 
 if ($hassiteconfig) {
+    $_s = function($id, $a=null){
+        return get_string($id,'local_proctoru',$a);
+    };
+    $br = function(){return html_writer::empty_tag('br');};
     
-    $settings = new admin_settingpage('local_proctoru', get_string('mod_name','local_proctoru'));
-
-    $roles = role_get_names(null, null, true);
-
-    $exemptRoles = array('student');
-
+    $settings = new admin_settingpage('local_proctoru', $_s('mod_name'));
     
+    //@TODO cleanup this entire section and conform to standard practice
+    
+    //report heading
+    $counts ="";
+    $rawCounts = ProctorU::dbrGetUserCountByStatus();
+    
+    foreach(ProctorU::mapRawUserCountToFriendlyNames($rawCounts) as $name => $count) {
+        $counts .= sprintf("%s%s: %d",$br(),$name, $count->count);
+    }
+    
+    $reportLinkUrl  = new moodle_url('/local/proctoru/report.php');
+    $reportLinkText = html_writer::tag('a', "Full Report", array('href'=>$reportLinkUrl));
+    
+    $statsText = $_s('report_link_text').$br().$counts.$br().$br().$reportLinkText;
+    
+    $settings->add(
+            new admin_setting_heading('report_link_head', $_s('report_head'), $statsText));
+
+    $settings->add(
+            new admin_setting_heading('config_head', $_s('config_head'),''));
+    
+    $roles       = role_get_names(null, null, true);
+    $exemptRoles = array('teacher');
+
     $settings->add(
             new admin_setting_configmultiselect(
                     'local_proctoru/roleselection',
@@ -101,4 +125,5 @@ if ($hassiteconfig) {
     
     $ADMIN->add('localplugins', $settings);
 }
+
 ?>

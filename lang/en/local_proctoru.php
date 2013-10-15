@@ -48,4 +48,12 @@ $string['localwebservice_userexists_servicename_description'] = "Source for user
 
 $string['stu_profile'] = "Student Profile Name";
 $string['stu_profile_description'] = "Student Profile name is a required param to the Webservice query.";
+
+//report strings
+$string['report_head']      = "Current Registration Statistics";
+$string['report_link_text'] = 'current stats are as follows...';
+
+//config_head
+$string['config_head'] = "Configuration";
+
 ?>
