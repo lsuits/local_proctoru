@@ -38,8 +38,8 @@ abstract class abstract_testcase extends advanced_testcase{
         //enroll some users
 //        $this->insertOneUserOfEachFlavor();
 //        $this->enrolUsers();
-
-        $this->assertNotEmpty($DB->get_record('user_info_field',array('shortname' => 'user_proctoru')));
+        $shortname = get_config('local_proctoru', 'profilefield_shortname');
+        $this->assertNotEmpty($DB->get_record('user_info_field',array('shortname' => $shortname)));
         $this->assertNotEmpty(get_config('local_proctoru','localwebservice_url'));
         
         $this->assertNotEmpty($this->pu->localWebservicesUrl);
@@ -100,7 +100,7 @@ abstract class abstract_testcase extends advanced_testcase{
     
     protected function setProfileField($userid, $value){
         global $DB;
-        $shortname = "user_".get_config('local_proctoru', 'profilefield_shortname');
+        $shortname = get_config('local_proctoru', 'profilefield_shortname');
         
         //create profile field
         $fieldParams = array(

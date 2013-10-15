@@ -54,6 +54,14 @@ if ($hassiteconfig) {
                     ''
             )
     );
+    $settings->add(
+            new admin_setting_configtext(
+                    'local_proctoru/profilefield_longname',
+                    get_string('profilefield_longname', 'local_proctoru'),
+                    get_string('profilefield_longname_description', 'local_proctoru'),
+                    ''
+            )
+    );
 
     $settings->add(
             new admin_setting_configtext(

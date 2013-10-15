@@ -24,7 +24,11 @@ $string['cron_desc'] = 'Run with Cron?';
 // custom profile field
 $string['profilefield_shortname'] = "Custom role name";
 $string['profilefield_shortname_description'] = "Name of the custom profile field";
-$string['user_proctoru'] = "ProctorU Registration status";
+
+$string['profilefield_longname'] = "Custom role long name";
+$string['profilefield_longname_description'] = "Full name of the custom profile field";
+
+//$string['user_proctoru'] = "ProctorU Registration status";
 
 // ProctorU API details
 $string['proctoru_token'] = 'ProctorU webservice token';

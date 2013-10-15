@@ -12,7 +12,8 @@ class ProctorU_testcase extends abstract_testcase{
         global $DB;
         //map lookup is a little anonymous; refactor the map to make semantic sense
         $this->assertEquals($this->conf->config[1][1], get_config('local_proctoru','roleselection'));
-        $this->assertNotEmpty($DB->get_record('user_info_field',array('shortname' => 'user_proctoru')));
+        $shortname = get_config('local_proctoru','profilefield_shortname');
+        $this->assertNotEmpty($DB->get_record('user_info_field',array('shortname' => $shortname)));
         $this->assertNotEmpty(get_config('local_proctoru','localwebservice_url'));
         
         $this->assertNotEmpty($this->pu->localWebservicesUrl);
@@ -34,7 +35,7 @@ class ProctorU_testcase extends abstract_testcase{
     public function test_intCustomFieldID(){
         global $DB;
         $conf = get_config('local_proctoru',$this->conf->config[2][0]);
-        $id   = $DB->get_field('user_info_field','id',array('shortname' => "user_".$conf));
+        $id   = $DB->get_field('user_info_field','id',array('shortname' => $conf));
         $this->assertEquals($id, ProctorU::intCustomFieldID());
     }
     

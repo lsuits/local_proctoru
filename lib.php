@@ -9,6 +9,7 @@ require_once 'Cronlib.php';
 function local_proctoru_cron() {
 
     if (get_config('local_proctoru','bool_cron' == 1)) {
+        ProctorU::default_profile_field();
         mtrace("got here");
         mtrace(sprintf("Running ProctorU cron tasks"));
         $cron = new ProctorUCronProcessor();
@@ -46,14 +47,9 @@ class ProctorU {
     const PU_NOT_FOUND  = -404;
         
     public function __construct() {
-        
-        $fieldParams = array(
-            'shortname' => get_string('profilefield_shortname', 'local_proctoru'),
-            'categoryid' => 1,
-        );  
-        self::default_profile_field($fieldParams);
 
-        
+        self::default_profile_field();
+
         $this->localWebservicesCredentialsUrl = get_config('local_proctoru', 'credentials_location');
         $this->localWebservicesUrl            = get_config('local_proctoru', 'localwebservice_url');
     }
@@ -85,17 +81,18 @@ class ProctorU {
      * @param type $params
      * @return \stdClass
      */
-    public static function default_profile_field($params) {
+    public static function default_profile_field() {
         global $DB;
-
-        if (!$field = $DB->get_record('user_info_field', $params)) {
+        $shortname = get_config('local_proctoru', 'profilefield_shortname');
+        
+        if (!$field = $DB->get_record('user_info_field', array('shortname' => $shortname))) {
             $field              = new stdClass;
-            $field->shortname   = $params['shortname'];
-            $field->name        = get_string($field->shortname, 'local_proctoru');
+            $field->shortname   = $shortname;
+            $field->name        = get_config('local_proctoru', 'profilefield_longname');
             $field->description = get_string('profilefield_shortname', 'local_proctoru');
             $field->descriptionformat = 1;
             $field->datatype    = 'text';
-            $field->categoryid  = $params['categoryid'];
+            $field->categoryid  = 1;
             $field->locked      = 1;
             $field->visible     = 1;
             $field->param1      = 30;
@@ -112,7 +109,7 @@ class ProctorU {
      * @return string shortname of the custom field in the DB
      */
     public static function strFieldname() {
-        return "user_".get_config('local_proctoru','profilefield_shortname');
+        return get_config('local_proctoru','profilefield_shortname');
     }
     
     /**
@@ -245,7 +242,7 @@ public static function partial_get_users_listing($status= null,$sort='lastaccess
     }else{
         //figure out which field key the filter function uses for our field
         $fieldKey = null;
-        $fieldShortname = "user_".get_config('local_proctoru', 'profilefield_shortname');
+        $fieldShortname = get_config('local_proctoru', 'profilefield_shortname');
         foreach($proFilter->get_profile_fields() as $k=>$sn){
             if($sn == $fieldShortname){
                 $fieldKey = $k;
