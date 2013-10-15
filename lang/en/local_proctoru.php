@@ -1,5 +1,6 @@
 <?php
-$string['mod_name'] = "Proctor U";
+$string['mod_name']   = "Proctor U";
+$string['pluginname'] = "Proctor U";
 
 //status codes
 $string['unregistered']      = 'Unregistered';
@@ -56,4 +57,6 @@ $string['report_link_text'] = 'current stats are as follows...';
 //config_head
 $string['config_head'] = "Configuration";
 
+// cap
+$string['proctoru:viewstats'] = 'View ProctorU registration statistics';
 ?>

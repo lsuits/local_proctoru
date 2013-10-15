@@ -23,7 +23,7 @@ require_once('../../config.php');
 
 defined('MOODLE_INTERNAL') || die();
 
-global $CFG,$PAGE;
+global $CFG,$PAGE, $USER;
 require_login();
 $context = get_context_instance(CONTEXT_SYSTEM);
 $PAGE->set_context($context);
@@ -34,7 +34,7 @@ $PAGE->set_title('Reg title');
 $PAGE->set_heading('Reg Header');
 $PAGE->navbar->add('Nav');
 
-if(is_siteadmin($USER)){
+if(is_siteadmin($USER) or has_capability('local/proctoru:viewstats', get_context_instance(CONTEXT_SYSTEM))){
 
     $output = $PAGE->get_renderer('local_proctoru');
     $reportData = new registration_report();
@@ -44,7 +44,8 @@ if(is_siteadmin($USER)){
 
     mtrace('end table out');
 }else{
-    print_error("not authorized");
+    //@TODO use lang strings
+    notice("You are not authorized to view this resource",new moodle_url('/my'));
 }
 
 ?>

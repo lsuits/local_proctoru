@@ -62,6 +62,7 @@ class ProctorU {
      * for a given const status, returns a human-freindly string
      */
     public static function strMapStatusToLangString($status){
+        if(empty($status)) return ''; //necessary so that users without status do not cause array index errors
         $_s = function($str){
             return get_string($str, 'local_proctoru');
         };
