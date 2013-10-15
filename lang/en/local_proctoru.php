@@ -1,5 +1,6 @@
 <?php
 $string['mod_name'] = "Proctor U";
+$string['pluginname'] = "Proctor U";
 
 //status codes
 $string['unregistered']      = 'Unregistered';
