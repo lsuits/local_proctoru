@@ -88,7 +88,7 @@ class LocalDataStoreClient extends CurlXmlClient {
     }
 
     public function blnUserExists($idnumber) {
-        mtrace(sprintf("check user %sexists in DAS", $idnumber));
+        mtrace(sprintf("check user %s exists in DAS", $idnumber));
         $this->addParams();
         $this->params['serviceId'] = get_config('local_proctoru', 'localwebservice_userexists_servicename');
         $this->params['1'] = $idnumber;
