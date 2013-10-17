@@ -22,7 +22,7 @@ function local_proctoru_cron() {
         mtrace(sprintf("Set status %s for %d of %d unregistered users.",ProctorU::UNREGISTERED, $intUnreg, count($unreg)));
 
         $intExempt = $cron->intSetStatusForUser($exempt, ProctorU::EXEMPT);
-        mtrace(sprintf("Set status %s for %d of %d unregistered users.",ProctorU::EXEMPT, $intExempt, count($exempt)));
+        mtrace(sprintf("Set status %s for %d of %d exempt users.",ProctorU::EXEMPT, $intExempt, count($exempt)));
 
         $needProcessing = $cron->objGetUnverifiedUsers();
         mtrace(sprintf("Begin processing user status for %d users", count($needProcessing)));
@@ -332,17 +332,18 @@ public static function partial_get_users_listing($status= null,$sort='lastaccess
      */
     public static function objGetAllUsersWithoutProctorStatus(){
 
-        $all = self::objGetAllUsers();
+        $allUsers   = self::objGetAllUsers();
 
         $haveStatus = self::objGetAllUsersWithProctorStatus();
         
         $ids = array_diff(
-                array_keys($all),
+                array_keys($allUsers),
                 array_keys($haveStatus)
                 );
-        $haveNoStatus = array_intersect_key($all, array_flip($ids));
+        
+        $noStatus   = array_intersect_key($allUsers, array_flip($ids));
 
-        return $haveNoStatus;
+        return $noStatus;
     }
     
     

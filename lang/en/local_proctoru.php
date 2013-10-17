@@ -39,7 +39,7 @@ $string['proctoru_api_description'] = "ProctorU API URL";
 
 
 // LSU-specific local data store connection settings
-$string['credentials_location'] = 'Crednetials Location';
+$string['credentials_location'] = 'Credentials Location';
 $string['credentials_location_description'] = 'Location of local webservices credentials';
 
 // More LSU-specific local data store connection settings
