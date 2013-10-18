@@ -77,17 +77,5 @@ class ProctorUClient_testcase extends advanced_testcase {
         $this->assertEquals(ProctorU::VERIFIED, $unit);
     }
 
-    /**
-     * method under test saves a remote file to the data root
-     * using the pseudoid as the filename
-     * @global type $CFG
-     */
-    public function test_getImage(){
-        global $CFG;
-        $userid = $this->conf->data['testUser3']['pseudoId'];
-        $unit   = $this->class->filGetUserImage($userid);
-
-        $this->assertFileExists($CFG->dataroot.'/'.$userid.'.jpg');
-    }
 }
 ?>

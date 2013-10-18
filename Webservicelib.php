@@ -42,18 +42,30 @@ class CurlXmlClient {
 
     public function xmlFetchResponse() {
         try{
-            return new SimpleXMLElement($this->strGetRawResponse());
-        }catch(Exception $e){
+            $resp = $this->strGetRawResponse();
+
+            libxml_use_internal_errors(true);
+            $test = simplexml_load_string($resp);
+
+            if($test === false){
+                $msg = "";
+                foreach(libxml_get_errors() as $err){
+                    $msg .= sprintf("\t%s\n",$err->message);
+                }
+                throw new ProctorUWebserviceException($msg);
+            }
+
+            return new SimpleXMLElement($resp);
+        }
+        catch(Exception $e){
             $msg = sprintf("class %s generated an exception while trying to 
-                convert a webservice response to XML. 
+                convert the response from %s to XML. 
                 Original exception message was\n '%s'", 
-                    get_class($this), $e->getMessage()
+                    get_class($this),$this->baseUrl, $e->getMessage()
                     );
             throw new ProctorUWebserviceException($msg);
         }
-            
     }
-
 }
 
 class CredentialsClient extends CurlXmlClient {
@@ -68,7 +80,6 @@ class CredentialsClient extends CurlXmlClient {
         $this->stdParams = array('credentials' => 'get');
         $this->addParams();
     }
-
 }
 
 class LocalDataStoreClient extends CurlXmlClient {
@@ -102,6 +113,14 @@ class LocalDataStoreClient extends CurlXmlClient {
         return array(strtolower(trim($widget1)), trim($widget2));
     }
 
+    public function voidCheckError(SimpleXMLElement $xml) {
+        if (isset($xml->ERROR_MSG)) {
+            throw new ProctorUWebserviceLocalDataStoreException(
+                    sprintf("Problem obtaining data for service %s, 
+                        message was %s ", $this->params['serviceId'], $xml->ERROR_MSG));
+        }
+    }
+
     public function blnUserExists($idnumber) {
         mtrace(sprintf("check user %s exists in DAS", $idnumber));
         $this->addParams();
@@ -110,11 +129,8 @@ class LocalDataStoreClient extends CurlXmlClient {
         $this->params['2'] = get_config('local_proctoru', 'stu_profile');
 
         $xml = $this->xmlFetchResponse();
-        
-//        if(isset($xml->ERROR_MSG)){
-//            throw new Exception(sprintf("Problem obtaining data for service %s, message was %s ",$this->params['serviceId'], $xml->ERROR_MSG));
-//        }
-        
+        $this->voidCheckError($xml);
+
         return (string)$xml->ROW->HAS_PROFILE == 'Y' ? true : false;
     }
 
@@ -125,10 +141,8 @@ class LocalDataStoreClient extends CurlXmlClient {
         $this->params['1'] = $idnumber;
 
         $xml = $this->xmlFetchResponse();
+        $this->voidCheckError($xml);
 
-        if(isset($xml->ERROR_MSG)){
-            throw new Exception(sprintf("Problem obtaining data for service %s, message was %s ",$this->params['serviceId'], $xml->ERROR_MSG));
-        }
         return isset($xml->ROW->PSEUDO_ID) ? (int)(string)$xml->ROW->PSEUDO_ID : false;
     }
 }
@@ -179,51 +193,12 @@ class ProctorUClient extends CurlXmlClient {
         $response    = $this->strRequestUserProfile($remoteStudentIdnumber);
         $strNotFound = isset($response->message) && strpos($response->message, 'Student Not Found');
         if($strNotFound){
-            self::$errorCount++;
-            if(self::$erroCount > 2){
-                throw new Exception(sprintf("Exceeded 404 quota for class instance; count = %d", self::$errorCount));
-            }
-            return ProctorU::PU_NOT_FOUND;
+            throw new ProctorUWebserviceProctorUException(
+                    sprintf("Got 404 for user with PU id# %s\nFull response was:\n%s", 
+                            $remoteStudentIdnumber,print_r($response)));
         }else{
             return $response->data->hasimage == true ? ProctorU::VERIFIED : ProctorU::REGISTERED;
         }
-    }
-    
-    public function filGetUserImage($remoteStudentIdnumber){
-        global $CFG;
-        
-        $now   = new DateTime();
-        $url   = $this->baseUrl.'/getStudentImage';
-
-        $savePath = $CFG->dataroot.'/'.$remoteStudentIdnumber.'.jpg';
-//        $dloadOptions = array('filepath' => $savePath);
-//        $this->options += $dloadOptions;
-        
-        $curl  = new curl($this->options);
-        $token = get_config('local_proctoru', 'proctoru_token');
-
-        $curl->setHeader(sprintf('Authorization-Token: %s', $token));
-        $this->params = array(
-            'time_sent'     => $now->format(DateTime::ISO8601),
-            'student_Id'    => $remoteStudentIdnumber
-        );
-
-        if($curl->download_one(
-                $url, 
-                $this->params, 
-                array(
-                    'filepath' => $savePath, 
-                    'timeout' => 5, 
-                    'followlocation' => true, 
-                    'maxredirs' => 3
-                    )
-                )){
-            return $savePath;
-        }else{
-            return false;
-        }
-        
-        
     }
 }
 

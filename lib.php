@@ -9,7 +9,6 @@ require_once 'Cronlib.php';
 function local_proctoru_cron() {
 
     if (get_config('local_proctoru','bool_cron' == 1)) {
-        ProctorU::default_profile_field();
 
         $outputException = function(Exception $e, $headline){
             $class = get_class($e);
@@ -21,6 +20,15 @@ function local_proctoru_cron() {
             ProctorUCronProcessor::emailAdmins($out);
         };
         
+        try{
+            ProctorU::default_profile_field();
+        }
+        catch(ProctorUException $e){
+            $msg = "";
+            $outputException($e,$msg);
+            return true;
+        }
+
         mtrace(sprintf("Running ProctorU cron tasks"));
         try{
             $cron = new ProctorUCronProcessor();
@@ -120,7 +128,11 @@ class ProctorU {
     public static function default_profile_field() {
         global $DB;
         $shortname = get_config('local_proctoru', 'profilefield_shortname');
-        
+
+        if(!$shortname){
+            throw new ProctorUException('profile field shortname is not configured');
+        }
+
         if (!$field = $DB->get_record('user_info_field', array('shortname' => $shortname))) {
             $field              = new stdClass;
             $field->shortname   = $shortname;
