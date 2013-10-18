@@ -130,10 +130,7 @@ class ProctorUCronProcessor {
 
         //get PU status
         $puStatus = $this->puClient->constUserStatus($pseudoID);
-
-        //fetch image
-//        $path = $this->puClient->filGetUserImage($pseudoID);
-        //$this->blnInsertPicture($path, $u->id);
+        
         return $puStatus;
     }
 
@@ -142,6 +139,19 @@ class ProctorUCronProcessor {
         $context = get_context_instance(CONTEXT_USER, $userid);
         process_new_icon($context, 'user', 'icon', 0, $path);
         $DB->set_field('user', 'picture', 1, array('id' => $userid));
+    }
+    
+    public static function emailAdmins($msg){
+        global $CFG,$DB;
+
+        $from = $CFG->wwwroot;
+        
+        $adminIds     = explode(',',$CFG->siteadmins);
+        $admins = $DB->get_records_list('user', 'id',$adminIds);
+        
+        foreach($admins as $a){
+            email_to_user($a, $from, 'proctoru message', $msg);
+        }
     }
 }
 ?>

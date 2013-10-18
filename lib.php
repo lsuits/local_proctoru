@@ -10,9 +10,39 @@ function local_proctoru_cron() {
 
     if (get_config('local_proctoru','bool_cron' == 1)) {
         ProctorU::default_profile_field();
-        mtrace("got here");
+
+        $outputException = function(Exception $e, $headline){
+            $class = get_class($e);
+            
+            $out = sprintf("caught Exception of type %s:\n%s\n",$class,$headline);
+            $out.= sprintf("Message was:\n%s\n",$e->getMessage());
+            $out.= sprintf("Stack trace:\n\n%s", $e->getTraceAsString());
+            mtrace($out);
+            ProctorUCronProcessor::emailAdmins($out);
+        };
+        
         mtrace(sprintf("Running ProctorU cron tasks"));
-        $cron = new ProctorUCronProcessor();
+        try{
+            $cron = new ProctorUCronProcessor();
+        }catch(ProctorUWebserviceLocalDataStoreException $e){
+            $msg = sprintf("!!!Trouble initializing LocalDataStore component 
+                of the CronProcessor:\n
+                %s\n%s\n
+                Aborting ProctorU cron tasks\n", $e->getMessage(), $e->getTrace());
+            $outputException($e,$msg);
+            return true;
+        }catch(ProctorUWebserviceCredentialsClientException $e){
+            $msg = sprintf("!!!Trouble initializing CredentialsClient component 
+                of the CronProcessor:\n
+                %s\n%s\n
+                Aborting ProctorU cron tasks\n", $e->getMessage(), $e->getTraceAsString());
+            $outputException($e,$msg);
+            return true;
+        }catch(ProctorUException $e){
+            $msg = sprintf("!!!Trouble initializing CronProcessor:\n%s\nAborting ProctorU cron tasks\n", $e->getMessage());
+            $outputException($e,$msg);
+            return true;
+        }
 
         //get users without status (new users)
         list($unreg,$exempt) = $cron->objPartitionUsersWithoutStatus();
@@ -26,8 +56,14 @@ function local_proctoru_cron() {
 
         $needProcessing = $cron->objGetUnverifiedUsers();
         mtrace(sprintf("Begin processing user status for %d users", count($needProcessing)));
-
-        $cron->blnProcessUsers($needProcessing);
+        try{
+            $cron->blnProcessUsers($needProcessing);
+        }
+        catch(ProctorUException $e){
+            $msg = "caught exception while processing users; \naborting...";
+            $outputException($e,$msg);
+            return true;
+        }
     } else {
         mtrace("Skipping ProctorU");
     }
@@ -423,5 +459,9 @@ public static function partial_get_users_listing($status= null,$sort='lastaccess
         }
         return $friendly;
     }
+}
+
+class ProctorUException extends moodle_exception{
+    
 }
 ?>

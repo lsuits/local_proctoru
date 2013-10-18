@@ -15,7 +15,7 @@ class CurlXmlClient {
 
     public function __construct($baseUrl, $method, $options) {
         if (!preg_match('/^[http|https]/', $baseUrl)) {
-            throw new Exception('bad_url');
+            throw new ProctorUWebserviceException(sprintf("URL given in admin settings is malformed. Expected http/https, got '%s'",$baseUrl));
         }
         $this->baseUrl      = $baseUrl;
         $this->method       = $method;
@@ -31,12 +31,27 @@ class CurlXmlClient {
     public function strGetRawResponse() {
         $curl = new curl($this->options);
         $meth = $this->method;
-        $this->resp = $curl->$meth($this->baseUrl, $this->params);
+        try{
+            $this->resp = $curl->$meth($this->baseUrl, $this->params);
+        }catch(Exception $e){
+            $msg = sprintf("Exception thrown while making a webservice request from class %s", get_class($this));
+            throw new ProctorUWebserviceException($msg);
+        }
         return $this->resp;
     }
 
     public function xmlFetchResponse() {
-        return new SimpleXMLElement($this->strGetRawResponse());
+        try{
+            return new SimpleXMLElement($this->strGetRawResponse());
+        }catch(Exception $e){
+            $msg = sprintf("class %s generated an exception while trying to 
+                convert a webservice response to XML. 
+                Original exception message was\n '%s'", 
+                    get_class($this), $e->getMessage()
+                    );
+            throw new ProctorUWebserviceException($msg);
+        }
+            
     }
 
 }
@@ -81,7 +96,7 @@ class LocalDataStoreClient extends CurlXmlClient {
         list($widget1, $widget2) = explode("\n", $resp);
 
         if (empty($widget1) or empty($widget2)) {
-            throw new Exception('bad_resp');
+            throw new ProctorUWebserviceCredentialsClientException('Missing one or both expected values in response from Credentials Client.');
         }
 
         return array(strtolower(trim($widget1)), trim($widget2));
@@ -210,5 +225,18 @@ class ProctorUClient extends CurlXmlClient {
         
         
     }
+}
+
+class ProctorUWebserviceException extends ProctorUException {
+    
+}
+class ProctorUWebserviceCredentialsClientException extends ProctorUException {
+    
+}
+class ProctorUWebserviceLocalDataStoreException extends ProctorUException {
+    
+}
+class ProctorUWebserviceProctorUException extends ProctorUException {
+    
 }
 ?>
