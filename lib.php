@@ -8,7 +8,7 @@ require_once 'Cronlib.php';
 
 function local_proctoru_cron() {
 
-    if (get_config('local_proctoru','bool_cron' == 1)) {
+    if (get_config('local_proctoru','bool_cron')) {
 
         $outputException = function(Exception $e, $headline){
             $class = get_class($e);
