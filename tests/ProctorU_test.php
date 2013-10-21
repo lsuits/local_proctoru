@@ -11,14 +11,14 @@ class ProctorU_testcase extends abstract_testcase{
         parent::setup();
         global $DB;
         //map lookup is a little anonymous; refactor the map to make semantic sense
-        $this->assertEquals($this->conf->config[1][1], get_config('local_proctoru','roleselection'));
-        $shortname = get_config('local_proctoru','profilefield_shortname');
+        $this->assertEquals($this->conf->config[1][1], ProctorU::_c('roleselection'));
+        $shortname = ProctorU::_c('profilefield_shortname');
         $this->assertNotEmpty($DB->get_record('user_info_field',array('shortname' => $shortname)));
-        $this->assertNotEmpty(get_config('local_proctoru','localwebservice_url'));
+        $this->assertNotEmpty(ProctorU::_c('localwebservice_url'));
         
-        $this->assertNotEmpty($this->pu->localWebservicesUrl);
-        $this->assertInternalType('string', get_config('local_proctoru','localwebservice_url'));
-        $this->assertInternalType('string', $this->pu->localWebservicesUrl);
+        $this->assertNotEmpty(ProctorU::_c( 'localwebservice_url'));
+        $this->assertInternalType('string', ProctorU::_c('localwebservice_url'));
+        $this->assertInternalType('string', ProctorU::_c( 'localwebservice_url'));
     }
 
     
@@ -34,7 +34,7 @@ class ProctorU_testcase extends abstract_testcase{
     
     public function test_intCustomFieldID(){
         global $DB;
-        $conf = get_config('local_proctoru',$this->conf->config[2][0]);
+        $conf = ProctorU::_c($this->conf->config[2][0]);
         $id   = $DB->get_field('user_info_field','id',array('shortname' => $conf));
         $this->assertEquals($id, ProctorU::intCustomFieldID());
     }
@@ -102,8 +102,8 @@ class ProctorU_testcase extends abstract_testcase{
     }
     
     public function test_objGetExemptRoles(){
-        $config = explode(',',get_config('local_proctoru', 'roleselection'));
-        $unit   = $this->pu->objGetExemptRoles();
+        $config = explode(',',ProctorU::_c( 'roleselection'));
+        $unit   = ProctorU::objGetExemptRoles();
 
         $this->assertEquals(count($config), count($unit));
         $this->assertEmpty(array_diff(array_keys($unit), $config));
@@ -124,25 +124,25 @@ class ProctorU_testcase extends abstract_testcase{
         //$wipe = true, $confUsers = false, $numSusp=40, $numDele=35,$numAnon=30, $numUnreg=25, $numReg=20,  $numVer=15, $numExempt=10
         $this->buildDataset(false, false, null, null, null,$n);
         //this assumes admin has not been set to any exempt role
-        $this->assertEquals($n, count(ProctorU::objGetUsersWithStatusUnregistered()));
+        $this->assertEquals($n, count(ProctorU::objGetUsersWithStatus(ProctorU::UNREGISTERED)));
     }
     public function test_objGetUsersWithStatusRegistered() {
         $n = 17;
         $this->buildDataset(false, false, null, null, null,null,$n);
         //this assumes admin has not been set to any exempt role
-        $this->assertEquals($n, count(ProctorU::objGetUsersWithStatusRegistered()));
+        $this->assertEquals($n, count(ProctorU::objGetUsersWithStatus(ProctorU::REGISTERED)));
     }
     public function test_objGetVerifiedUsers() {
         $n = 13;
         $this->buildDataset(false, false, null, null, null, null, null,$n);
         //this assumes admin has not been set to any exempt role
-        $this->assertEquals($n, count(ProctorU::objGetUsersWithStatusVerified()));
+        $this->assertEquals($n, count(ProctorU::objGetUsersWithStatus(ProctorU::VERIFIED)));
     }
     public function test_objGetUsersWithStatusExempt() {
         $n = 14;
         $this->buildDataset(false, false, null, null, null, null, null,null,$n);
         //this assumes admin has not been set to any exempt role
-        $this->assertEquals($n, count(ProctorU::objGetUsersWithStatusExempt()));
+        $this->assertEquals($n, count(ProctorU::objGetUsersWithStatus(ProctorU::EXEMPT)));
     }
     
     public function test_objGetAllUsersWithoutProctorStatus_excludesPeopleWithPUStatus() {
@@ -208,9 +208,7 @@ class ProctorU_testcase extends abstract_testcase{
         //admin + normal users
         $this->assertEquals(11,count(ProctorU::objGetAllUsers()));
     }
-    
 
-    
     public function test_objGetExemptUsers() {
         $this->enrolTestUsers();
         $exempt = ProctorU::objGetExemptUsers();
