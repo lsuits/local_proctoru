@@ -47,12 +47,17 @@ class ProctorUCronProcessor {
     
     /**
      * get users that need to be looked up again
+     * NB that this function excludes the set of users who have
+     * previously generated a 404 in the PU system.
+     * PU deactivates the webservice account once the error count 
+     * exceeds their quota.
+     * 
      * @return object[] user objects
      */
     public function objGetUnverifiedUsers(){
         $all        = ProctorU::objGetAllUsers();
-        $exempt     = ProctorU::objGetUsersWithStatusExempt();
-        $verified   = ProctorU::objGetUsersWithStatusVerified();
+        $exempt     = ProctorU::objGetUsersWithStatus(ProctorU::EXEMPT);
+        $verified   = ProctorU::objGetUsersWithStatus(ProctorU::VERIFIED);
         $pu404      = ProctorU::objGetUsersWithStatus(ProctorU::PU_NOT_FOUND);
 
         return array_diff_key($all, $exempt, $verified, $pu404);
