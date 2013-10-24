@@ -68,6 +68,7 @@ class registration_report implements renderable {
     }
     
     private function fixStatusCodes(){
+        //@TODO refactor this so that we don't create a get_string for each data point!!!
         foreach($this->data as $d){
             $d->status = ProctorU::strMapStatusToLangString($d->status);
         }
