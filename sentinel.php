@@ -10,7 +10,7 @@ class local_proctoru implements Sentinel {
         $acceptableStatus = ProctorU::blnUserHasAcceptableStatus($user->id);
         $hasExemptRole    = ProctorU::blnUserHasExemptRole($user->id);
 
-        if ($acceptableStatus or $hasExemptRole) {
+        if ($acceptableStatus or $hasExemptRole or is_siteadmin()) {
             return true;
         }else{
             return false;
