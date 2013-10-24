@@ -20,7 +20,7 @@ function local_proctoru_cron() {
             $a->msg = $e->getMessage();
             $a->trc = $e->getTraceAsString();
             
-            $out    = PrctorU::_s('exception_envelope', $a);
+            $out    = ProctorU::_s('exception_envelope', $a);
             
             mtrace($out);
             ProctorUCronProcessor::emailAdmins($out);
@@ -350,7 +350,6 @@ public static function partial_get_users_listing($status= null,$sort='lastaccess
         
         //get filter for suspended users 
         list($extraselect, $extraparams) = self::arrAddSuspendedUserFilter($extraselectRo, $extraparamsRo);
-
         return get_users_listing('','',null,null,'',
             '','', $extraselect, $extraparams, $extracontext);
     }
@@ -458,7 +457,8 @@ public static function partial_get_users_listing($status= null,$sort='lastaccess
         foreach (array_keys($exemptRoles) as $roleid) {
             $ex = ProctorU::partial_get_users_listing_by_roleid($roleid);
             mtrace(sprintf("found %d users with exempt roleid %d", count($ex), $roleid));
-            $exempt = array_merge($exempt, $ex);
+//            $exempt = array_merge($exempt, $ex);
+            $exempt += $ex;
             $total += count($ex);
         }
         assert($total == count($exempt));
