@@ -137,7 +137,6 @@ class ProctorU_testcase extends abstract_testcase{
         $unitTeachers = ProctorU::partial_get_users_listing_by_roleid($this->teacherRoleId);
         
         $unitKeys = array_keys($unitTeachers);
-//        var_dump(array_diff($teacherKeys, $unitKeys));
 
         $this->assertEquals($teacherCount, count($unitTeachers));
     }
