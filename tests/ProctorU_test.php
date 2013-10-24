@@ -118,6 +118,30 @@ class ProctorU_testcase extends abstract_testcase{
         $this->assertEquals(4, count($students));
     }
     
+    public function test_partial_get_users_listing_by_roleid_teacher(){
+        global $DB;
+
+        $this->assertEquals(2,count($DB->get_records('user'))); //admin + guest
+        
+        $teacherCount = 5;
+        $teachers     = $this->addNUsersToDatabase($teacherCount);
+        $this->assertEquals($teacherCount, count($teachers));
+        $course       = $this->getDataGenerator()->create_course();
+        
+        $teacherKeys = array();
+        foreach($teachers as $t){
+            $this->enrolUser($t, $course, $this->teacherRoleId);
+            $teacherKeys[] = $t->id;
+        }
+
+        $unitTeachers = ProctorU::partial_get_users_listing_by_roleid($this->teacherRoleId);
+        
+        $unitKeys = array_keys($unitTeachers);
+//        var_dump(array_diff($teacherKeys, $unitKeys));
+
+        $this->assertEquals($teacherCount, count($unitTeachers));
+    }
+    
     
     public function test_objGetUsersWithStatusUnregistered() {
         $n = 8;
@@ -148,7 +172,7 @@ class ProctorU_testcase extends abstract_testcase{
     public function test_objGetAllUsersWithoutProctorStatus_excludesPeopleWithPUStatus() {
         global $DB;
         $this->enrolTestUsers(); //4 users
-        $this->addNUsersToDatabase(20); //random, unregistered users
+        $this->addNUsersToDatabase(20); //random, anonymous users
         
         // 4 test users + admin, guest should be ignored
         $this->assertEquals(25, count(ProctorU::objGetAllUsers()));
