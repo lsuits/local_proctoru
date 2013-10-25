@@ -20,19 +20,24 @@
  * @license http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 require_once('../../config.php');
+require_once 'lib.php';
 
 defined('MOODLE_INTERNAL') || die();
 
-global $CFG,$PAGE, $USER;
+global $SITE,$PAGE, $USER;
 require_login();
 $context = get_context_instance(CONTEXT_SYSTEM);
 $PAGE->set_context($context);
 $PAGE->set_url(new moodle_url('/local/proctoru/report.php'));
 $PAGE->set_pagelayout('admin');
 $PAGE->set_course($SITE);
-$PAGE->set_title('Reg title');
+$PAGE->set_title(ProctorU::_s('report_page_title'));
 $PAGE->set_heading('Reg Header');
-$PAGE->navbar->add('Nav');
+
+$lngName = ProctorU::_s('pluginname');
+$shtName = ProctorU::_s('franken_name');
+$settingsLink = new moodle_url('/admin/settings.php', array('section'=>$shtName));
+$PAGE->navbar->add($lngName, $settingsLink);
 
 if(is_siteadmin($USER) or has_capability('local/proctoru:viewstats', get_context_instance(CONTEXT_SYSTEM))){
 
@@ -42,10 +47,8 @@ if(is_siteadmin($USER) or has_capability('local/proctoru:viewstats', get_context
     echo $output->render($reportData);
     echo $output->footer();
 
-    mtrace('end table out');
 }else{
-    //@TODO use lang strings
-    notice("You are not authorized to view this resource",new moodle_url('/my'));
+    notice(ProctorU::_s('report_not_auth',new moodle_url('/my')));
 }
 
 ?>

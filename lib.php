@@ -8,79 +8,89 @@ require_once 'Cronlib.php';
 
 function local_proctoru_cron() {
 
-    if (get_config('local_proctoru','bool_cron')) {
+    if (ProctorU::_c('bool_cron')) {
 
+        //format exception messages in a standard template
         $outputException = function(Exception $e, $headline){
             $class = get_class($e);
             
-            $out = sprintf("caught Exception of type %s:\n%s\n",$class,$headline);
-            $out.= sprintf("Message was:\n%s\n",$e->getMessage());
-            $out.= sprintf("Stack trace:\n\n%s", $e->getTraceAsString());
+            $a      = new stdClass();
+            $a->cls = $class;
+            $a->hln = $headline;
+            $a->msg = $e->getMessage();
+            $a->trc = $e->getTraceAsString();
+            
+            $out    = ProctorU::_s('exception_envelope', $a);
+            
             mtrace($out);
             ProctorUCronProcessor::emailAdmins($out);
         };
-        
-        try{
-            ProctorU::default_profile_field();
-        }
-        catch(ProctorUException $e){
-            $msg = "";
-            $outputException($e,$msg);
-            return true;
-        }
 
-        mtrace(sprintf("Running ProctorU cron tasks"));
+        mtrace(ProctorU::_s('start_cron'));
+        //ensure profile field exists
+        ProctorU::default_profile_field();
+        
         try{
             $cron = new ProctorUCronProcessor();
         }catch(ProctorUWebserviceLocalDataStoreException $e){
-            $msg = sprintf("!!!Trouble initializing LocalDataStore component 
-                of the CronProcessor:\n
-                %s\n%s\n
-                Aborting ProctorU cron tasks\n", $e->getMessage(), $e->getTrace());
-            $outputException($e,$msg);
+            
+            $a      = new stdClass();
+            $a->msg = $e->getMessage();
+            $a->trc = $e->getTrace();
+            
+            $outputException($e,ProctorU::_s('toplevel_datastore_exception', $a));
             return true;
+            
         }catch(ProctorUWebserviceCredentialsClientException $e){
-            $msg = sprintf("!!!Trouble initializing CredentialsClient component 
-                of the CronProcessor:\n
-                %s\n%s\n
-                Aborting ProctorU cron tasks\n", $e->getMessage(), $e->getTraceAsString());
-            $outputException($e,$msg);
+            
+            $a      = new stdClass();
+            $a->msg = $e->getMessage();
+            $a->trc = $e->getTrace();
+            
+            $outputException($e,ProctorU::_s('toplevel_credentials_exception', $a));
             return true;
+            
         }catch(ProctorUException $e){
-            $msg = sprintf("!!!Trouble initializing CronProcessor:\n%s\nAborting ProctorU cron tasks\n", $e->getMessage());
-            $outputException($e,$msg);
+            
+            $a      = new stdClass();
+            $a->msg = $e->getMessage();
+            
+            $outputException($e,ProctorU::_s('toplevel_generic_exception', $a));
             return true;
         }
 
         //get users without status (new users)
         list($unreg,$exempt) = $cron->objPartitionUsersWithoutStatus();
 
-        //set appropriate status for new users
+        //set new users as unregistered
         $intUnreg = $cron->intSetStatusForUser($unreg, ProctorU::UNREGISTERED);
-        mtrace(sprintf("Set status %s for %d of %d unregistered users.",ProctorU::UNREGISTERED, $intUnreg, count($unreg)));
+        mtrace(sprintf("Set status %s for %d of %d unregistered users.",
+                ProctorU::UNREGISTERED, $intUnreg, count($unreg)));
 
+        //set exempt status
         $intExempt = $cron->intSetStatusForUser($exempt, ProctorU::EXEMPT);
-        mtrace(sprintf("Set status %s for %d of %d exempt users.",ProctorU::EXEMPT, $intExempt, count($exempt)));
+        mtrace(sprintf("Set status %s for %d of %d exempt users.",
+                ProctorU::EXEMPT, $intExempt, count($exempt)));
 
+        //get unverified users
         $needProcessing = $cron->objGetUnverifiedUsers();
         mtrace(sprintf("Begin processing user status for %d users", count($needProcessing)));
         try{
             $cron->blnProcessUsers($needProcessing);
         }
         catch(ProctorUException $e){
-            $msg = "caught exception while processing users; \naborting...";
-            $outputException($e,$msg);
+            $outputException($e,ProctorU::_s('general_exception'));
             return true;
         }
     } else {
-        mtrace("Skipping ProctorU");
+        mtrace(ProctorU::_s('cron_not_required'));
     }
     return true;
 }
 
 class ProctorU {
 
-    public $username, $password, $localWebservicesCredentialsUrl, $localWebserviceUrl;
+//    public $username, $password, $localWebservicesCredentialsUrl, $localWebserviceUrl;
     
     const UNREGISTERED  = 1;
     const REGISTERED    = 2;
@@ -89,34 +99,46 @@ class ProctorU {
     const SAM_HAS_PROFILE_ERROR = -1;
     const NO_IDNUMBER   = -2;
     const PU_NOT_FOUND  = -404;
-        
-    public function __construct() {
 
-        self::default_profile_field();
-
-        $this->localWebservicesCredentialsUrl = get_config('local_proctoru', 'credentials_location');
-        $this->localWebservicesUrl            = get_config('local_proctoru', 'localwebservice_url');
+    public static function _c($c){
+        return get_config('local_proctoru', $c);
     }
-
+    
+    public static function _s($s, $a=null){
+        $b = get_string('franken_name', 'local_proctoru');
+        return get_string($s, $b, $a);
+    }
+    
+    /**
+     * Simply returns an array of the class constants
+     * @return int[]
+     */
+    public static function arrStatuses(){
+        return array(
+            ProctorU::EXEMPT,
+            ProctorU::NO_IDNUMBER, 
+            ProctorU::PU_NOT_FOUND, 
+            ProctorU::REGISTERED,
+            ProctorU::SAM_HAS_PROFILE_ERROR,
+            ProctorU::UNREGISTERED,
+            ProctorU::VERIFIED);
+    }
     /**
      * for a given const status, returns a human-freindly string
      */
     public static function strMapStatusToLangString($status){
         if(empty($status)) return ''; //necessary so that users without status do not cause array index errors
-        $_s = function($str){
-            return get_string($str, 'local_proctoru');
-        };
-        
+
         $map = array(
-            ProctorU::UNREGISTERED  => 'unregistered',
-            ProctorU::REGISTERED    => 'registered',
-            ProctorU::VERIFIED  => 'verified',
-            ProctorU::EXEMPT    => 'exempt',
+            ProctorU::UNREGISTERED          => 'unregistered',
+            ProctorU::REGISTERED            => 'registered',
+            ProctorU::VERIFIED              => 'verified',
+            ProctorU::EXEMPT                => 'exempt',
             ProctorU::SAM_HAS_PROFILE_ERROR => 'sam_profile_error',
-            ProctorU::NO_IDNUMBER   => 'no_idnumber',
-            ProctorU::PU_NOT_FOUND  => 'pu_404',
+            ProctorU::NO_IDNUMBER           => 'no_idnumber',
+            ProctorU::PU_NOT_FOUND          => 'pu_404',
                 );
-        return $_s($map[$status]);
+        return ProctorU::_s($map[$status]);
     }
     
     /**
@@ -127,17 +149,17 @@ class ProctorU {
      */
     public static function default_profile_field() {
         global $DB;
-        $shortname = get_config('local_proctoru', 'profilefield_shortname');
-
-        if(!$shortname){
-            throw new ProctorUException('profile field shortname is not configured');
+        
+        $shortname = ProctorU::_c( 'profilefield_shortname');
+        if($shortname == false){
+            $shortname = ProctorU::_s( 'profilefield_default_shortname');
         }
 
         if (!$field = $DB->get_record('user_info_field', array('shortname' => $shortname))) {
             $field              = new stdClass;
             $field->shortname   = $shortname;
-            $field->name        = get_config('local_proctoru', 'profilefield_longname');
-            $field->description = get_string('profilefield_shortname', 'local_proctoru');
+            $field->name        = ProctorU::_c('profilefield_longname');
+            $field->description = ProctorU::_s('profilefield_shortname');
             $field->descriptionformat = 1;
             $field->datatype    = 'text';
             $field->categoryid  = 1;
@@ -157,7 +179,7 @@ class ProctorU {
      * @return string shortname of the custom field in the DB
      */
     public static function strFieldname() {
-        return get_config('local_proctoru','profilefield_shortname');
+        return ProctorU::_c('profilefield_shortname');
     }
     
     /**
@@ -213,7 +235,7 @@ class ProctorU {
     
     public static function blnUserHasExemptRole($userid){
         global $DB;
-        $exemptRoleIds = get_config('local_proctoru', 'roleselection');
+        $exemptRoleIds = ProctorU::_c( 'roleselection');
         $sql = "SELECT id
                 FROM {role_assignments} 
                 WHERE roleid IN ({$exemptRoleIds}) AND userid = {$userid}";
@@ -237,9 +259,9 @@ class ProctorU {
         $record  = $DB->get_record('user_info_data', array('userid'=>$userid, 'fieldid'=>$fieldId));
         
         if(!$record){
-            $record = new stdClass();
-            $record->data = $status;
-            $record->userid = $userid;
+            $record          = new stdClass();
+            $record->data    = $status;
+            $record->userid  = $userid;
             $record->fieldid = $fieldId;
             
             mtrace(sprintf("%sInsert new record, status %s", $msg,$status));
@@ -289,16 +311,18 @@ public static function partial_get_users_listing($status= null,$sort='lastaccess
         $extraparams = array();
     }else{
         //figure out which field key the filter function uses for our field
-        $fieldKey = null;
-        $fieldShortname = get_config('local_proctoru', 'profilefield_shortname');
+        $fieldKey       = null;
+        $fieldShortname = ProctorU::_c( 'profilefield_shortname');
+        
         foreach($proFilter->get_profile_fields() as $k=>$sn){
+
             if($sn == $fieldShortname){
                 $fieldKey = $k;
             }
         }
+        
         if(is_null($fieldKey)){
-            throw new Exception("attempt to filter by non-existent profile field; 
-                check your field shortname exists.");
+            throw new Exception(ProctorU::_s('profilefield_not_foud'));
         }
 
         $data['profile']    = $fieldKey;
@@ -308,16 +332,10 @@ public static function partial_get_users_listing($status= null,$sort='lastaccess
         list($extraselect, $extraparams) = $proFilter->get_sql_filter($data);
     }
 
-    $suspFilter = new user_filter_yesno('suspended', 'Suspended',1,'suspended');
-    $suspData = array(
-        'value' => "0",
-    );
-    list($suspXSelect, $suspXParams) = $suspFilter->get_sql_filter($suspData);
+    //get filter for suspended users
+    list($extraselect, $extraparams) = self::arrAddSuspendedUserFilter($extraselect, $extraparams);
     
-    $extraselect .= " AND ".$suspXSelect . "AND deleted = 0";
-    $extraparams += $suspXParams;
-    
-    $extracontext= context_system::instance();
+    $extracontext = context_system::instance();
     
     return get_users_listing($sort,$dir,$page,$recordsperpage,$search,
             $firstinitial,$lastinitial, $extraselect, $extraparams, $extracontext);
@@ -328,54 +346,78 @@ public static function partial_get_users_listing($status= null,$sort='lastaccess
         $data         = array('value'=>false, 'roleid'=>$roleid, 'categoryid'=>0);
         $extracontext = context_system::instance();
         
-        list($extraselect, $extraparams) = $roFilter->get_sql_filter($data);
+        list($extraselectRo, $extraparamsRo) = $roFilter->get_sql_filter($data);
         
-        //exclude suspended users
-        {
-            $suspFilter = new user_filter_yesno('suspended', 'Suspended',1,'suspended');
-            $suspData = array(
-                'value' => "0",
-            );
-            list($suspXSelect, $suspXParams) = $suspFilter->get_sql_filter($suspData);
-
-            $extraselect .= " AND ".$suspXSelect;
-            $extraparams += $suspXParams;
-        }
-        
+        //get filter for suspended users 
+        list($extraselect, $extraparams) = self::arrAddSuspendedUserFilter($extraselectRo, $extraparamsRo);
         return get_users_listing('','',null,null,'',
             '','', $extraselect, $extraparams, $extracontext);
     }
+
+    /**
+     * helper function wrapping functionality needed in two fns;
+     * Mainly exists to de-clutter the partial functions above and to
+     * avoid repreated code.
+     * @param string $extraselect
+     * @param array $extraparams
+     * @return array
+     */
+    private static function arrAddSuspendedUserFilter($extraselect, $extraparams){
+        //exclude suspended users
+        $suspFilter = new user_filter_yesno('suspended', 'Suspended',1,'suspended');
+        $suspData   = array('value' => "0",);
+        list($suspXSelect, $suspXParams) = $suspFilter->get_sql_filter($suspData);
+        
+        $extraselect .= " AND ".$suspXSelect;
+        $extraparams += $suspXParams;
+        
+        return array($extraselect, $extraparams);
+    }
     
     /**
-     * 
+     * Gets role rows frmo the DB that are in the admin setting 'roles to exempt'
      * @global type $DB
      * @return object[] role records of type stdClass, keyed by id
      */
     public static function objGetExemptRoles(){
         global $DB;
-        $rolesConfig = get_config('local_proctoru', 'roleselection');
+        $rolesConfig = ProctorU::_c( 'roleselection');
         return $DB->get_records_list('role', 'id', explode(',', $rolesConfig));
     }
 
+    /**
+     * Gets all non-suspended, non-deleted, non-guest users from the db
+     * @global type $DB
+     * @return object[] db result row objects
+     */
     public static function objGetAllUsers(){
         global $DB;
-        //@TODO should be rewritten as a single query
+
         $guestUserId  = $DB->get_field('user', 'id', array('username'=>'guest'));
+
         $active       = $DB->get_records('user', array('suspended'=>0,'deleted'=>0));
 
         unset($active[$guestUserId]);
+
         return $active;
     }
     
+    /**
+     * Get all users with one of the ProctorU statuses.
+     * Used to set 
+     * 
+     * @return object[] user rows objects
+     */
     public static function objGetAllUsersWithProctorStatus(){
-        return self::objGetUsersWithStatusUnregistered() +
-                self::objGetUsersWithStatusRegistered()  +
-                self::objGetUsersWithStatusVerified()    +
-                self::objGetUsersWithStatusExempt();
+        $users = array();
+        foreach(self::arrStatuses() as $st){
+            $users += self::objGetUsersWithStatus($st);
+        }
+        return $users;
     }
 
     /**
-     * Gets
+     * Gets users without a value in the proctoru profile field
      * @return int[]
      */
     public static function objGetAllUsersWithoutProctorStatus(){
@@ -396,56 +438,30 @@ public static function partial_get_users_listing($status= null,$sort='lastaccess
     
     
     /**
-     * @TODO replace the 4 methods below with calls to this
      * @param int $status class constants
-     * @return object[]
+     * @return object[] db user row objects having the given proctoru status
      */
     public static function objGetUsersWithStatus($status){
         return ProctorU::partial_get_users_listing($status);
     }
-    
-    /**
-     * get users with ProctorU status set to ProctorU::UNREGISTERED
-     * @return object[] array of unregistered users
-     */
-    public static function objGetUsersWithStatusUnregistered(){
-        return ProctorU::partial_get_users_listing(ProctorU::UNREGISTERED);
-    }
-    
-    /**
-     * get users with ProctorU status set to ProctorU::REGISTERED
-     * @return object[] array of registered users
-     */
-    public static function objGetUsersWithStatusRegistered(){
-        return ProctorU::partial_get_users_listing(ProctorU::REGISTERED);
-    }
-    
-    /**
-     * get users with ProctorU status set to ProctorU::VERIFIED
-     * @return object[] array of verified users
-     */
-    public static function objGetUsersWithStatusVerified(){
-        return ProctorU::partial_get_users_listing(ProctorU::VERIFIED);
-    }
-    
-    /**
-     * get users with ProctorU status set to ProctorU::EXEMPT
-     * @return object[] array of exempt users
-     */
-    public static function objGetUsersWithStatusExempt(){
-        return ProctorU::partial_get_users_listing(ProctorU::EXEMPT);
-    }
 
     /**
-     * 
+     * Find users that are exempt for proctoru lookup based
+     * on their membership in a one of te exempt roles in some context
      * @return object[] users having the exempt role in any course
      */
     public static function objGetExemptUsers() {
         $exemptRoles = self::objGetExemptRoles();
         $exempt = array();
+        $total = 0;
         foreach (array_keys($exemptRoles) as $roleid) {
-            $exempt += ProctorU::partial_get_users_listing_by_roleid($roleid);
+            $ex = ProctorU::partial_get_users_listing_by_roleid($roleid);
+            mtrace(sprintf("found %d users with exempt roleid %d", count($ex), $roleid));
+//            $exempt = array_merge($exempt, $ex);
+            $exempt += $ex;
+            $total += count($ex);
         }
+        assert($total == count($exempt));
         return $exempt;
     }
     

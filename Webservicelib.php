@@ -15,7 +15,7 @@ class CurlXmlClient {
 
     public function __construct($baseUrl, $method, $options) {
         if (!preg_match('/^[http|https]/', $baseUrl)) {
-            throw new ProctorUWebserviceException(sprintf("URL given in admin settings is malformed. Expected http/https, got '%s'",$baseUrl));
+            throw new ProctorUWebserviceException(ProctorU::_s('wrong_protocol',$baseUrl));
         }
         $this->baseUrl      = $baseUrl;
         $this->method       = $method;
@@ -34,8 +34,7 @@ class CurlXmlClient {
         try{
             $this->resp = $curl->$meth($this->baseUrl, $this->params);
         }catch(Exception $e){
-            $msg = sprintf("Exception thrown while making a webservice request from class %s", get_class($this));
-            throw new ProctorUWebserviceException($msg);
+            throw new ProctorUWebserviceException(ProctorU::_s('general_curl_exception',get_class($this)));
         }
         return $this->resp;
     }
@@ -58,12 +57,11 @@ class CurlXmlClient {
             return new SimpleXMLElement($resp);
         }
         catch(Exception $e){
-            $msg = sprintf("class %s generated an exception while trying to 
-                convert the response from %s to XML. 
-                Original exception message was\n '%s'", 
-                    get_class($this),$this->baseUrl, $e->getMessage()
-                    );
-            throw new ProctorUWebserviceException($msg);
+            $a = new stdClass();
+            $a->msg = $e->getMessage();
+            $a->cls = get_class($this);
+            $a->url = $this->baseUrl;
+            throw new ProctorUWebserviceException(ProctorU::_s('xml_exception', $a));
         }
     }
 }
@@ -71,7 +69,7 @@ class CurlXmlClient {
 class CredentialsClient extends CurlXmlClient {
 
     public function __construct() {
-        $baseUrl   = get_config('local_proctoru', 'credentials_location');
+        $baseUrl   = ProctorU::_c('credentials_location');
         $method    = 'post';
         $options   = array('cache' => true);
 
@@ -86,7 +84,7 @@ class LocalDataStoreClient extends CurlXmlClient {
 
     public function __construct() {
 
-        $baseUrl = get_config('local_proctoru', 'localwebservice_url');
+        $baseUrl = ProctorU::_c('localwebservice_url');
         $method = 'get';
         $options = array();
 
@@ -107,26 +105,28 @@ class LocalDataStoreClient extends CurlXmlClient {
         list($widget1, $widget2) = explode("\n", $resp);
 
         if (empty($widget1) or empty($widget2)) {
-            throw new ProctorUWebserviceCredentialsClientException('Missing one or both expected values in response from Credentials Client.');
+            throw new ProctorUWebserviceCredentialsClientException(ProctorU::_s('missing_credentials'));
         }
 
         return array(strtolower(trim($widget1)), trim($widget2));
     }
 
     public function voidCheckError(SimpleXMLElement $xml) {
+
         if (isset($xml->ERROR_MSG)) {
-            throw new ProctorUWebserviceLocalDataStoreException(
-                    sprintf("Problem obtaining data for service %s, 
-                        message was %s ", $this->params['serviceId'], $xml->ERROR_MSG));
+            $a = new stdClass();
+            $a->srv = $this->params['serviceId'];
+            $a->msg = (string)$xml->ERROR_MSG;
+            throw new ProctorUWebserviceLocalDataStoreException(ProctorU::_s('datastore_errors', $a));
         }
     }
 
     public function blnUserExists($idnumber) {
         mtrace(sprintf("check user %s exists in DAS", $idnumber));
         $this->addParams();
-        $this->params['serviceId'] = get_config('local_proctoru', 'localwebservice_userexists_servicename');
+        $this->params['serviceId'] = ProctorU::_c('eligible_users_service');
         $this->params['1'] = $idnumber;
-        $this->params['2'] = get_config('local_proctoru', 'stu_profile');
+        $this->params['2'] = ProctorU::_c('stu_profile');
 
         $xml = $this->xmlFetchResponse();
         $this->voidCheckError($xml);
@@ -137,7 +137,7 @@ class LocalDataStoreClient extends CurlXmlClient {
     public function intPseudoId($idnumber){
         mtrace(sprintf("fetch PseudoID from DAS for user %s", $idnumber));
         $this->addParams();
-        $this->params['serviceId'] = get_config('local_proctoru', 'localwebservice_fetchuser_servicename');
+        $this->params['serviceId'] = ProctorU::_c('userid_service');
         $this->params['1'] = $idnumber;
 
         $xml = $this->xmlFetchResponse();
@@ -151,7 +151,7 @@ class ProctorUClient extends CurlXmlClient {
     static $errorCount;
     
     public function __construct(){
-        $baseUrl   = get_config('local_proctoru', 'proctoru_api');
+        $baseUrl   = ProctorU::_c('proctoru_api');
         $method    = 'get';
         $options   = array('cache' => true);
         parent::__construct($baseUrl, $method, $options);
@@ -164,7 +164,7 @@ class ProctorUClient extends CurlXmlClient {
         $url   = $this->baseUrl.'/'.$serviceName;
         $meth  = $this->method;
         $curl  = new curl($this->options);
-        $token = get_config('local_proctoru', 'proctoru_token');
+        $token = ProctorU::_c('proctoru_token');
 
         $curl->setHeader(sprintf('Authorization-Token: %s', $token));
         $this->params = array(
@@ -193,9 +193,10 @@ class ProctorUClient extends CurlXmlClient {
         $response    = $this->strRequestUserProfile($remoteStudentIdnumber);
         $strNotFound = isset($response->message) && strpos($response->message, 'Student Not Found');
         if($strNotFound){
-            throw new ProctorUWebserviceProctorUException(
-                    sprintf("Got 404 for user with PU id# %s\nFull response was:\n%s", 
-                            $remoteStudentIdnumber,print_r($response)));
+            $a = new stdClass();
+            $a->uid = $remoteStudentIdnumber;
+            $a->msg = print_r($response);
+            throw new ProctorUWebserviceProctorUException(ProctorU::_s('pu_404', $a));
         }else{
             return $response->data->hasimage == true ? ProctorU::VERIFIED : ProctorU::REGISTERED;
         }

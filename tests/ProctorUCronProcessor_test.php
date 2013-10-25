@@ -8,26 +8,71 @@ require_once $CFG->dirroot . '/local/proctoru/tests/abstract_testcase.php';
 class ProctorUCronProcessor_testcase extends abstract_testcase{
 
     public function test_objPartitionUsersWithoutStatus(){
-        $numTeachers = 10;
-        $numStudents = 20;
+        global $DB;
+  
+        //user count vars
+        $numStudents = 9;
+        $numTeachers = 5;
+        //don't forget that in moodle phpunit tests, 
+        //admin and guest are registered automatically
         
+        //create users
         $students = $this->addNUsersToDatabase($numStudents);
         $teachers = $this->addNUsersToDatabase($numTeachers);
         $course   = $this->getDataGenerator()->create_course();
-        
+
+        //enrol students
+        $studentKeys = array();
         foreach($students as $s) {
             $this->enrolUser($s, $course, $this->studentRoleId);
+            $studentKeys[] = $s->id;
         }
-        
+
+        //enrol teachers
+        $teacherKeys = array();
         foreach($teachers as $t) {
             $this->enrolUser($t, $course, $this->teacherRoleId);
+            $teacherKeys[] = $t->id;
         }
         
+        //verify that the enrolment has affected the role_assignments table as expected
+        $intDbRoleAssignmentsStudent = $DB->get_records('role_assignments', array('roleid'=>$this->studentRoleId));
+        $this->assertEquals($numStudents, count($intDbRoleAssignmentsStudent));
+
+        $intDbRoleAssignmentsTeacher = $DB->get_records('role_assignments', array('roleid'=>$this->teacherRoleId));
+        $this->assertEquals($numTeachers, count($intDbRoleAssignmentsTeacher));
+
+        //test the module function to ensure we both agree 
+        //on the list of exempt and unregistered users
         list($unreg, $exempt) = $this->cron->objPartitionUsersWithoutStatus();
-        $this->assertEquals($numStudents +1, count($unreg)); //+1 for admin
+        
+        //check that counts match
         $this->assertEquals($numTeachers, count($exempt));
+        
+        //find the set-difference between teacherIds and exemptIds
+        $exemptKeys = array_keys($exempt);
+
+        $diffTeachers      = array_diff($exemptKeys, $teacherKeys);
+        $strTeacherSetDiff = sprintf("\nteachers ids: {%s}\nexempt ids: {%s}",implode(',',$teacherKeys), implode(',',$exemptKeys));
+        $this->assertEmpty($diffTeachers, $strTeacherSetDiff);
+
+        
+        //find the set-difference between studentIds and unregIds
+        
+        //first take admin out of the picture; guest is handled by the 
+        //fn under test
+        $admin = $DB->get_record('user', array('username'=>'admin'));
+        unset($unreg[$admin->id]);
+        
+        $unregKeys = array_keys($unreg);
+
+        $diffStudents      = array_diff($unregKeys, $studentKeys);
+        $strStudentSetDiff = sprintf("students ids: {%s}\nunreg ids: {%s}\nset diff: {%s}",implode(',',$studentKeys), implode(',',$unregKeys), implode(',',$diffStudents));
+
+        $this->assertEquals($numStudents, count($unreg), sprintf("%d students found where %d were expected; differing ids = {%s}", count($unreg), $numStudents+1, $strStudentSetDiff)); //+1 for admin
+        $this->assertEmpty($diffStudents, $strStudentSetDiff);
     }
-    
+
     public function test_objGetUnverifiedUsers(){
         $v = 11;
         $u = 23;

@@ -53,12 +53,12 @@ class registration_report implements renderable {
         global $DB;
         $sql = "
             SELECT u.id, u.firstname, u.lastname, u.username, u.idnumber, 
-                (SELECT value FROM mdl_enrol_ues_usermeta usm WHERE usm.userid = u.id AND usm.name = 'user_major') AS major, 
-                (SELECT value FROM mdl_enrol_ues_usermeta usm WHERE usm.userid = u.id AND usm.name = 'user_college') AS college, 
-                (SELECT r.shortname FROM mdl_role r WHERE r.id = (SELECT min(roleid) FROM mdl_role_assignments WHERE userid = u.id)) AS role,
+                (SELECT value FROM {enrol_ues_usermeta} usm WHERE usm.userid = u.id AND usm.name = 'user_major') AS major, 
+                (SELECT value FROM {enrol_ues_usermeta} usm WHERE usm.userid = u.id AND usm.name = 'user_college') AS college, 
+                (SELECT r.shortname FROM {role} r WHERE r.id = (SELECT min(roleid) FROM {role_assignments} WHERE userid = u.id)) AS role,
                 uid.data AS status
-                        FROM mdl_user_info_data uid 
-                        INNER JOIN mdl_user u ON u.id = uid.userid 
+                        FROM {user_info_data} uid 
+                        INNER JOIN {user} u ON u.id = uid.userid 
                         WHERE fieldid   = :fieldid
                         AND u.suspended = 0
                         AND u.deleted   = 0";
@@ -68,6 +68,7 @@ class registration_report implements renderable {
     }
     
     private function fixStatusCodes(){
+        //@TODO refactor this so that we don't create a get_string for each data point!!!
         foreach($this->data as $d){
             $d->status = ProctorU::strMapStatusToLangString($d->status);
         }

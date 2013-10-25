@@ -1,5 +1,7 @@
 <?php
 global $CFG;
+
+require_once $CFG->dirroot . '/local/proctoru/db/install.php';
 require_once $CFG->dirroot . '/local/proctoru/lib.php';
 require_once $CFG->dirroot . '/local/proctoru/Cronlib.php';
 require_once $CFG->dirroot . '/local/proctoru/tests/conf/ConfigProctorU.php';
@@ -19,12 +21,13 @@ abstract class abstract_testcase extends advanced_testcase{
     public function setup(){
         global $DB;
         $this->resetAfterTest();
+
+        xmldb_local_proctoru_install();
         
         //init configs
         $this->conf = new ConfigProctorU();
         $this->conf->setConfigs();
         
-        $this->pu   = new ProctorU();
         $this->cron = new ProctorUCronProcessor();
         $this->courses[] = $this->getDataGenerator()->create_course();
         $this->assertEquals(2,$this->courses[0]->id);
@@ -35,16 +38,14 @@ abstract class abstract_testcase extends advanced_testcase{
         
         $this->localDataStore = new LocalDataStoreClient();
         $this->puClient      = new ProctorUClient();
-        //enroll some users
-//        $this->insertOneUserOfEachFlavor();
-//        $this->enrolUsers();
-        $shortname = get_config('local_proctoru', 'profilefield_shortname');
+
+        $shortname = ProctorU::_c( 'profilefield_shortname');
         $this->assertNotEmpty($DB->get_record('user_info_field',array('shortname' => $shortname)));
-        $this->assertNotEmpty(get_config('local_proctoru','localwebservice_url'));
+        $this->assertNotEmpty(ProctorU::_c('localwebservice_url'));
         
-        $this->assertNotEmpty($this->pu->localWebservicesUrl);
-        $this->assertInternalType('string', get_config('local_proctoru','localwebservice_url'));
-        $this->assertInternalType('string', $this->pu->localWebservicesUrl);
+        $this->assertNotEmpty(ProctorU::_c( 'localwebservice_url'));
+        $this->assertInternalType('string', ProctorU::_c('localwebservice_url'));
+        $this->assertInternalType('string', ProctorU::_c( 'localwebservice_url'));
         
     }
     
@@ -100,14 +101,10 @@ abstract class abstract_testcase extends advanced_testcase{
     
     protected function setProfileField($userid, $value){
         global $DB;
-        $shortname = get_config('local_proctoru', 'profilefield_shortname');
+        $shortname = ProctorU::_c( 'profilefield_shortname');
         
         //create profile field
-        $fieldParams = array(
-            'shortname' => $shortname,
-            'categoryid' => 1,
-        );
-        $this->pu->default_profile_field($fieldParams);
+        ProctorU::default_profile_field();
         
         $fieldid = $DB->get_field('user_info_field', 'id', array('shortname'=>$shortname));
 
