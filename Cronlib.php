@@ -120,10 +120,11 @@ class ProctorUCronProcessor {
         }
 
         //handle the case where we are looking up a 
-        //non-online student in the online database
+        //non-online student in the online database;
+        //By decree, these students are exempt from PU verification
         if(!$this->localDataStore->blnUserExists($u->idnumber)){
-            mtrace(sprintf("User %d is NOT registered with DAS\n", $u->id));
-            return ProctorU::SAM_HAS_PROFILE_ERROR;
+            mtrace(sprintf("User %d does not have the online profile, therefore, exempt\n", $u->id));
+            return ProctorU::EXEMPT;
         }
 
         //fetch proxy id
