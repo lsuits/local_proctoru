@@ -26,7 +26,7 @@ defined('MOODLE_INTERNAL') || die();
 
 global $SITE,$PAGE, $USER;
 require_login();
-$context = get_context_instance(CONTEXT_SYSTEM);
+$context = context_system::instance();
 $PAGE->set_context($context);
 $PAGE->set_url(new moodle_url('/local/proctoru/report.php'));
 $PAGE->set_pagelayout('admin');
@@ -39,7 +39,7 @@ $shtName = ProctorU::_s('franken_name');
 $settingsLink = new moodle_url('/admin/settings.php', array('section'=>$shtName));
 $PAGE->navbar->add($lngName, $settingsLink);
 
-if(is_siteadmin($USER) or has_capability('local/proctoru:viewstats', get_context_instance(CONTEXT_SYSTEM))){
+if(is_siteadmin($USER) or has_capability('local/proctoru:viewstats', context_system::instance())){
 
     $output = $PAGE->get_renderer('local_proctoru');
     $reportData = new registration_report();
