@@ -1,6 +1,6 @@
 <?php
 require_once $CFG->dirroot.'/blocks/sentinel/lib.php';
-require_once 'lib.php';
+require_once $CFG->dirroot.'/local/proctoru/lib.php';
 
 /**
  * proxy class exists soley so that block_sentinel may call its method
