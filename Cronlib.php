@@ -142,7 +142,7 @@ class ProctorUCronProcessor {
 
     public function blnInsertPicture($path, $userid){
         global $DB;
-        $context = get_context_instance(CONTEXT_USER, $userid);
+        $context = context_user::instance($userid);
         process_new_icon($context, 'user', 'icon', 0, $path);
         $DB->set_field('user', 'picture', 1, array('id' => $userid));
     }
