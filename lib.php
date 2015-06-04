@@ -461,7 +461,7 @@ public static function partial_get_users_listing($status= null,$sort='lastaccess
             $exempt += $ex;
             $total += count($ex);
         }
-        assert($total == count($exempt));
+        mtrace(sprintf("%d TOTAL users are exempt from ProctorU limitations. This number should be reflected below.", count($exempt)));
         return $exempt;
     }
     
@@ -475,7 +475,7 @@ public static function partial_get_users_listing($status= null,$sort='lastaccess
             ";
         return $DB->get_records_sql($sql, array('fieldid'=>self::intCustomFieldID()));
     }
-    
+
     /**
      * returns an associative array of status names to user counts
      * @param array $dbr such as that returned from self::dbrGetUserCountByStatus

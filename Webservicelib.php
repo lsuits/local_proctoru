@@ -198,7 +198,7 @@ class ProctorUClient extends CurlXmlClient {
             $a->msg = print_r($response);
             throw new ProctorUWebserviceProctorUException(ProctorU::_s('pu_404', $a));
         }else{
-            return $response->data->hasimage == true ? ProctorU::VERIFIED : ProctorU::REGISTERED;
+            return isset($response->data->hasimage) == true ? ProctorU::VERIFIED : ProctorU::REGISTERED;
         }
     }
 }
