@@ -159,5 +159,34 @@ class ProctorUCronProcessor {
             email_to_user($a, $from, 'proctoru message', $msg);
         }
     }
+
+    /**
+    *** Check for students enrollment status
+    ***
+    **/
+    public function checkExemptUsersForStudentStatus(){
+        $needProcessing = array();
+
+        foreach(ProctorU::objGetUsersWithStatus(ProctorU::EXEMPT) as $k=>$v){
+            global $DB;
+
+            $where       = "userid = :userid";
+            $params      = array('userid'=>$v->id);
+
+            $userNonExempt   = $DB->get_fieldset_select('enrol_ues_students', 'userid',$where, $params);
+
+            if(!empty($userNonExempt)){
+                //user has a role asignment in one of the non-exempt roles
+                $idnumber = $DB->get_field('user','id',array('id'=>$v->id));
+                if($this->localDataStore->blnUserExists($idnumber)){
+                    //user is definitely a student
+                    mtrace("need to update status for user: ".$v->username);
+                    $needProcessing[$k] = $v;
+                }
+            }
+        }
+        assert(count($needProcessing > 0));
+        return $needProcessing;
+    }
 }
 ?>
