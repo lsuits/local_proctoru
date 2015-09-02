@@ -1,4 +1,4 @@
-# block_proctoru
+# local_proctoru
 
 Provides a library of functions oriented towards establishing ProctorU registration status for users.
 Creates a custom profile field in `user_info_field` which stores a status code corresponding to an enumeration 

@@ -13,20 +13,17 @@ class ProctorUCronProcessor {
     /**
      * CRON PHASES:
      * A.
-     * 1. get all users without a status set as STATUS_UNKNOWN users
-     * 2. partition STATUS_UNKNOWN set into EXEMPT and NON_EXEMPT
-     * 3. update status fields for each group as appropriate
+     * 1. get all users who need to be processed.
+     * 2. Ignore non-officially enrolled students and otherwise EXEMPT users
+     * 3. set statuses to 1 for unknown and previousl exempt official student users
+     * 4. partition STATUS_UNKNOWN set into EXEMPT and REGISTERED and VERIFIED, marking them as appropriate
      * 
-     * B. 
-     * 1. Fetch all rows where the status is STATUS_UNACCEPTABLE
-     * 2. attempt to process each of these users with STATUS_UNACCEPTABLE
-     * 
-     * C.
+     * B.
      * 1. For all unregeistered users, lookup pseudoID in DAS; IF NOT EXISTS, set DAS ERROR CODE
      * 2. for those that have PseudoIds, look them up in PU and set appropriate code
      *  a. do not allow more than a few 404 errors to happen, otherwise, account lockout
      * 
-     * D.
+     * C.
      * 1. report errors, esp 404
      */
 
@@ -158,6 +155,34 @@ class ProctorUCronProcessor {
         foreach($admins as $a){
             email_to_user($a, $from, 'proctoru message', $msg);
         }
+    }
+
+    /**
+    *** Check for student's UES enrollment status
+    *** If they're enrolled in any UES courses
+    *** Add them to the list of users in need of
+    *** Processing via the ProctorU webservice.
+    **/
+    public function checkExemptUsersForStudentStatus(){
+        $needProcessing = array();
+
+        foreach(ProctorU::objGetUsersWithStatus(ProctorU::EXEMPT) as $k=>$v){
+            global $DB;
+
+            $sql = 'SELECT id FROM {enrol_ues_students} WHERE userid = ?';
+            $params = array($v->id);
+            $userNonExempt = $DB->get_records_sql($sql, $params);
+
+            if(!empty($userNonExempt)){
+                //user has a role asignment in one of the non-exempt roles
+                $idnumber = $DB->get_field('user','id',array('id'=>$v->id));
+                //user is definitely a student
+                    mtrace("need to update status for user: ".$v->username);
+                $needProcessing[$k] = $v;
+            }
+        }
+        assert(count($needProcessing > 0));
+        return $needProcessing;
     }
 }
 ?>
