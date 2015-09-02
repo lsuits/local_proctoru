@@ -22,3 +22,5 @@ and navigate to the _Notifications_ page.
 Admin settings determine whether the module processes users during cron, define roles to consider 
 `ProctorU::EXEMPT` and all of the connection details required for communication with the various webservices.
 
+## Cron Phases 
+Documented in Cronlib.php 
