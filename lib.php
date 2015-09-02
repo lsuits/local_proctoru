@@ -76,6 +76,7 @@ function local_proctoru_cron() {
         $needProcessing = $cron->objGetUnverifiedUsers();
         mtrace(sprintf("Begin processing user status for %d users", count($needProcessing)));
         try{
+            // Add the users who need exemption processing to the list
             $needProcessing += $cron->checkExemptUsersForStudentStatus();
             $cron->blnProcessUsers($needProcessing);
         }

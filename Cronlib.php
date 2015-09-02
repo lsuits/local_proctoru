@@ -161,8 +161,10 @@ class ProctorUCronProcessor {
     }
 
     /**
-    *** Check for students enrollment status
-    ***
+    *** Check for student's UES enrollment status
+    *** If they're enrolled in any UES courses
+    *** Add them to the list of users in need of
+    *** Processing via the ProctorU webservice.
     **/
     public function checkExemptUsersForStudentStatus(){
         $needProcessing = array();
