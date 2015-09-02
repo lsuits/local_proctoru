@@ -170,19 +170,16 @@ class ProctorUCronProcessor {
         foreach(ProctorU::objGetUsersWithStatus(ProctorU::EXEMPT) as $k=>$v){
             global $DB;
 
-            $where       = "userid = :userid";
-            $params      = array('userid'=>$v->id);
-
-            $userNonExempt   = $DB->get_fieldset_select('enrol_ues_students', 'userid',$where, $params);
+            $sql = 'SELECT id FROM {enrol_ues_students} WHERE userid = ?';
+            $params = array($v->id);
+            $userNonExempt = $DB->get_records_sql($sql, $params);
 
             if(!empty($userNonExempt)){
                 //user has a role asignment in one of the non-exempt roles
                 $idnumber = $DB->get_field('user','id',array('id'=>$v->id));
-                if($this->localDataStore->blnUserExists($idnumber)){
-                    //user is definitely a student
+                //user is definitely a student
                     mtrace("need to update status for user: ".$v->username);
-                    $needProcessing[$k] = $v;
-                }
+                $needProcessing[$k] = $v;
             }
         }
         assert(count($needProcessing > 0));
