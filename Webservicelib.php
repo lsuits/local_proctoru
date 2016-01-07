@@ -169,7 +169,7 @@ class ProctorUClient extends CurlXmlClient {
         $curl->setHeader(sprintf('Authorization-Token: %s', $token));
         $this->params = array(
             'time_sent'     => $now->format(DateTime::ISO8601),
-            'student_Id'    => $remoteStudentIdnumber
+            'student_id'    => $remoteStudentIdnumber
         );
 
         return $curl->$meth($url, $this->params);
@@ -198,7 +198,11 @@ class ProctorUClient extends CurlXmlClient {
             $a->msg = print_r($response);
             throw new ProctorUWebserviceProctorUException(ProctorU::_s('pu_404', $a));
         }else{
-            return isset($response->data->hasimage) == true ? ProctorU::VERIFIED : ProctorU::REGISTERED;
+            if (isset($response->data->hasimage)) {
+                return $response->data->hasimage ? ProctorU::VERIFIED : ProctorU::REGISTERED;
+            } else {
+                return ProctorU::REGISTERED;
+            }
         }
     }
 }
