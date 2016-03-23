@@ -17,16 +17,20 @@
 
 /**
  * @package   local_proctoru
- * @copyright 2016 Louisiana State University, Jason Peak, Robert Russo
+ * @copyright 2016 Louisiana State University, Robert Russo
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2016032307;      // The current module version (Date: YYYYMMDDXX)
-$plugin->requires = 2011070110;      // Requires this Moodle version
-
-$plugin->component = 'local_proctoru';
-$plugin->maturity = MATURITY_STABLE;
-$plugin->release = '1.1';
-?>
+$tasks = array(
+    array(
+        'classname' => 'local_proctoru\task\ProctorU',
+        'blocking' => 0,
+        'minute' => '30',
+        'hour' => '*',
+        'day' => '*',
+        'dayofweek' => '*',
+        'month' => '*'
+    )
+);

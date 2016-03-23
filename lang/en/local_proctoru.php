@@ -3,6 +3,7 @@
 $string['mod_name']   = "Proctor U";
 $string['pluginname'] = "Proctor U";
 $string['franken_name']  = 'local_proctoru';
+$string['ProctorUCronProcessor']  = 'ProctorU Processor';
 
 //status codes
 $string['unregistered']      = 'Unregistered';

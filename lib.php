@@ -6,10 +6,7 @@ require_once($CFG->dirroot.'/user/filters/profilefield.php');
 require_once($CFG->dirroot.'/user/filters/yesno.php');
 require_once 'Cronlib.php';
 
-function local_proctoru_cron() {
-
-    if (ProctorU::_c('bool_cron')) {
-
+function local_proctoru_run() {
         //format exception messages in a standard template
         $outputException = function(Exception $e, $headline){
             $class = get_class($e);
@@ -84,11 +81,9 @@ function local_proctoru_cron() {
             $outputException($e,ProctorU::_s('general_exception'));
             return true;
         }
-    } else {
         mtrace(ProctorU::_s('cron_not_required'));
     }
     return true;
-}
 
 class ProctorU {
 
@@ -489,9 +484,5 @@ public static function partial_get_users_listing($status= null,$sort='lastaccess
         }
         return $friendly;
     }
-}
-
-class ProctorUException extends moodle_exception{
-    
 }
 ?>

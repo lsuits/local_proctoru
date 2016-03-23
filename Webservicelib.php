@@ -1,7 +1,7 @@
 <?php
 
 global $CFG;
-require_once 'lib.php';
+require_once $CFG->dirroot . '/local/proctoru/lib.php';
 require_once $CFG->libdir . '/filelib.php';
 
 class CurlXmlClient {
@@ -205,6 +205,10 @@ class ProctorUClient extends CurlXmlClient {
             }
         }
     }
+}
+
+class ProctorUException extends moodle_exception {
+
 }
 
 class ProctorUWebserviceException extends ProctorUException {
