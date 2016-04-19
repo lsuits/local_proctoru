@@ -6,7 +6,7 @@ $string['franken_name']  = 'local_proctoru';
 
 //status codes
 $string['unregistered']      = 'Unregistered';
-$string['registered']        = 'Regisitered';
+$string['registered']        = 'Registered';
 $string['verified']          = 'Verified';
 $string['exempt']            = 'Exempt';
 $string['sam_profile_error'] = 'Ineligible Profile';
@@ -17,10 +17,6 @@ $string['pu_404']            = '404 PrU';
 $string['roleselection'] = 'roleselection';
 $string['roleselection_label'] = 'Roles Exempt';
 $string['roleselection_description'] = 'which roles should be excluded from the PU lookup';
-
-// cron
-$string['cron_run']  = 'Cron';
-$string['cron_desc'] = 'Run with Cron?';
 
 // custom profile field
 $string['profilefield_default_shortname'] = 'proctoru';
@@ -81,10 +77,11 @@ $string['profilefield_not_foud'] = 'attempt to filter by non-existent profile fi
 $string['exception_envelope'] = 'caught Exception of type {$a->cls}: {$a->hln}; Message was: {$a->msg} Stack trace: {$a->trc}';
 
 //output
-$string['start_cron'] = 'Running ProctorU cron tasks';
-$string['toplevel_datastore_exception'] = '!!!Trouble initializing LocalDataStore component of the CronProcessor: {$a->msg} | {$a->trc} Aborting ProctorU cron tasks\n';
-$string['toplevel_credentials_exception'] = '!!!Trouble initializing CredentialsClient component of the CronProcessor: {$a->msg} {$a->trc} Aborting ProctorU cron tasks.';
-$string['toplevel_generic_exception'] = '!!!Trouble initializing CronProcessor:{$a->msg} Aborting ProctorU cron tasks';
+$string['start_task'] = 'Running ProctorU task';
+$string['toplevel_datastore_exception'] = '!!!Trouble initializing LocalDataStore component of the CronProcessor: {$a->msg} | {$a->trc} Aborting ProctorU tasks\n';
+$string['toplevel_credentials_exception'] = '!!!Trouble initializing CredentialsClient component of the CronProcessor: {$a->msg} {$a->trc} Aborting ProctorU tasks.';
+$string['toplevel_generic_exception'] = '!!!Trouble initializing CronProcessor:{$a->msg} Aborting ProctorU tasks';
 $string['general_exception'] = 'caught exception while processing users; aborting...';
-$string['cron_not_required'] = 'Cron not required for ProctorU.';
-?>
+
+// task
+$string['task_name'] = 'Proctor Users';

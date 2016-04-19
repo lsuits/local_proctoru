@@ -17,17 +17,14 @@
 
 /**
  * @package   local_proctoru
- * @copyright 2016 Louisiana State University, Jason Peak, Robert Russo
+ * @copyright 2016 Louisiana State University, Jason Peak, Robert Russo, Chad Mazilly
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2016031705;      // The current module version (Date: YYYYMMDDXX)
-$plugin->requires = 2011070110;      // Requires this Moodle version
-
+$plugin->version = 2016041907;
+$plugin->requires = 2015111600;
 $plugin->component = 'local_proctoru';
 $plugin->maturity = MATURITY_STABLE;
-$plugin->release = '1.1';
-$plugin->cron = 30;
-?>
+$plugin->release = '3.0';
