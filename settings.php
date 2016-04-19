@@ -121,14 +121,6 @@ if ($hassiteconfig) {
             )
     );
 
-    $settings->add(
-            new admin_setting_configcheckbox(
-                    'local_proctoru/bool_cron',
-                    ProctorU::_s('cron_run'),
-                    ProctorU::_s('cron_desc'),
-                    false, true, false)
-    );
-    
     $ADMIN->add('localplugins', $settings);
 }
 

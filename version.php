@@ -23,7 +23,7 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version = 2016041906;
+$plugin->version = 2016041907;
 $plugin->requires = 2015111600;
 $plugin->component = 'local_proctoru';
 $plugin->maturity = MATURITY_STABLE;

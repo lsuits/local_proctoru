@@ -6,94 +6,88 @@ require_once($CFG->dirroot.'/user/filters/profilefield.php');
 require_once($CFG->dirroot.'/user/filters/yesno.php');
 require_once 'Cronlib.php';
 
-function local_proctoru_cron() {
+function handle_local_proctoru() {
 
-    if (ProctorU::_c('bool_cron')) {
-
-        //format exception messages in a standard template
-        $outputException = function(Exception $e, $headline){
-            $class = get_class($e);
-            
-            $a      = new stdClass();
-            $a->cls = $class;
-            $a->hln = $headline;
-            $a->msg = $e->getMessage();
-            $a->trc = $e->getTraceAsString();
-            
-            $out    = ProctorU::_s('exception_envelope', $a);
-            
-            mtrace($out);
-            ProctorUCronProcessor::emailAdmins($out);
-        };
-
-        mtrace(ProctorU::_s('start_cron'));
-        //ensure profile field exists
-        ProctorU::default_profile_field();
+    //format exception messages in a standard template
+    $outputException = function(Exception $e, $headline){
+        $class = get_class($e);
         
-        try{
-            $cron = new ProctorUCronProcessor();
-        }catch(ProctorUWebserviceLocalDataStoreException $e){
-            
-            $a      = new stdClass();
-            $a->msg = $e->getMessage();
-            $a->trc = $e->getTrace();
-            
-            $outputException($e,ProctorU::_s('toplevel_datastore_exception', $a));
-            return true;
-            
-        }catch(ProctorUWebserviceCredentialsClientException $e){
-            
-            $a      = new stdClass();
-            $a->msg = $e->getMessage();
-            $a->trc = $e->getTrace();
-            
-            $outputException($e,ProctorU::_s('toplevel_credentials_exception', $a));
-            return true;
-            
-        }catch(ProctorUException $e){
-            
-            $a      = new stdClass();
-            $a->msg = $e->getMessage();
-            
-            $outputException($e,ProctorU::_s('toplevel_generic_exception', $a));
-            return true;
-        }
+        $a      = new stdClass();
+        $a->cls = $class;
+        $a->hln = $headline;
+        $a->msg = $e->getMessage();
+        $a->trc = $e->getTraceAsString();
+        
+        $out    = ProctorU::_s('exception_envelope', $a);
+        
+        mtrace($out);
+        ProctorUCronProcessor::emailAdmins($out);
+    };
 
-        //get users without status (new users)
-        list($unreg,$exempt) = $cron->objPartitionUsersWithoutStatus();
-
-        //set new users as unregistered
-        $intUnreg = $cron->intSetStatusForUser($unreg, ProctorU::UNREGISTERED);
-        mtrace(sprintf("Set status %s for %d of %d unregistered users.",
-                ProctorU::UNREGISTERED, $intUnreg, count($unreg)));
-
-        //set exempt status
-        $intExempt = $cron->intSetStatusForUser($exempt, ProctorU::EXEMPT);
-        mtrace(sprintf("Set status %s for %d of %d exempt users.",
-                ProctorU::EXEMPT, $intExempt, count($exempt)));
-
-        //get unverified users
-        $needProcessing = $cron->objGetUnverifiedUsers();
-        mtrace(sprintf("Begin processing user status for %d users", count($needProcessing)));
-        try{
-            // Add the users who need exemption processing to the list
-            $needProcessing += $cron->checkExemptUsersForStudentStatus();
-            $cron->blnProcessUsers($needProcessing);
-        }
-        catch(ProctorUException $e){
-            $outputException($e,ProctorU::_s('general_exception'));
-            return true;
-        }
-    } else {
-        mtrace(ProctorU::_s('cron_not_required'));
+    mtrace(ProctorU::_s('start_task'));
+    //ensure profile field exists
+    ProctorU::default_profile_field();
+    
+    try{
+        $cron = new ProctorUCronProcessor();
+    }catch(ProctorUWebserviceLocalDataStoreException $e){
+        
+        $a      = new stdClass();
+        $a->msg = $e->getMessage();
+        $a->trc = $e->getTrace();
+        
+        $outputException($e,ProctorU::_s('toplevel_datastore_exception', $a));
+        return true;
+        
+    }catch(ProctorUWebserviceCredentialsClientException $e){
+        
+        $a      = new stdClass();
+        $a->msg = $e->getMessage();
+        $a->trc = $e->getTrace();
+        
+        $outputException($e,ProctorU::_s('toplevel_credentials_exception', $a));
+        return true;
+        
+    }catch(ProctorUException $e){
+        
+        $a      = new stdClass();
+        $a->msg = $e->getMessage();
+        
+        $outputException($e,ProctorU::_s('toplevel_generic_exception', $a));
+        return true;
     }
+
+    //get users without status (new users)
+    list($unreg,$exempt) = $cron->objPartitionUsersWithoutStatus();
+
+    //set new users as unregistered
+    $intUnreg = $cron->intSetStatusForUser($unreg, ProctorU::UNREGISTERED);
+    mtrace(sprintf("Set status %s for %d of %d unregistered users.",
+            ProctorU::UNREGISTERED, $intUnreg, count($unreg)));
+
+    //set exempt status
+    $intExempt = $cron->intSetStatusForUser($exempt, ProctorU::EXEMPT);
+    mtrace(sprintf("Set status %s for %d of %d exempt users.",
+            ProctorU::EXEMPT, $intExempt, count($exempt)));
+
+    //get unverified users
+    $needProcessing = $cron->objGetUnverifiedUsers();
+    mtrace(sprintf("Begin processing user status for %d users", count($needProcessing)));
+    try{
+        // Add the users who need exemption processing to the list
+        $needProcessing += $cron->checkExemptUsersForStudentStatus();
+        $cron->blnProcessUsers($needProcessing);
+    }
+    catch(ProctorUException $e){
+        $outputException($e,ProctorU::_s('general_exception'));
+        return true;
+    }
+
     return true;
 }
 
 class ProctorU {
 
-//    public $username, $password, $localWebservicesCredentialsUrl, $localWebserviceUrl;
-    
     const UNREGISTERED  = 1;
     const REGISTERED    = 2;
     const VERIFIED      = 3;
@@ -281,66 +275,67 @@ class ProctorU {
         
     }
     
-/**
- * Partial application of the datalib.php function get_users_listing tailored to 
- * the task at hand
- * 
- * Return filtered (if provided) list of users in site, except guest and deleted users.
- *
- * @param string $sort          PASSTHROUGH An SQL field to sort by
- * @param string $dir           PASSTHROUGH The sort direction ASC|DESC
- * @param int $page             PASSTHROUGH The page or records to return
- * @param int                   PASSTHROUGH $recordsperpage The number of records to return per page
- * @param string                PASSTHROUGH(|IGNORE) $search A simple string to search for
- * @param string $firstinitial  PASSTHROUGH Users whose first name starts with $firstinitial
- * @param string $lastinitial   PASSTHROUGH Users whose last name starts with $lastinitial
- * @param string $extraselect   An additional SQL select statement to append to the query
- * @param array  $extraparams   Additional parameters to use for the above $extraselect
- * @param stdClass $extracontext If specified, will include user 'extra fields'
- *   as appropriate for current user and given context
- * @return array Array of {@link $USER} records
- */
-public static function partial_get_users_listing($status= null,$sort='lastaccess', $dir='ASC', $page=0, $recordsperpage=0,
-                           $search='', $firstinitial='', $lastinitial='') {
+    /**
+     * Partial application of the datalib.php function get_users_listing tailored to 
+     * the task at hand
+     * 
+     * Return filtered (if provided) list of users in site, except guest and deleted users.
+     *
+     * @param string $sort          PASSTHROUGH An SQL field to sort by
+     * @param string $dir           PASSTHROUGH The sort direction ASC|DESC
+     * @param int $page             PASSTHROUGH The page or records to return
+     * @param int                   PASSTHROUGH $recordsperpage The number of records to return per page
+     * @param string                PASSTHROUGH(|IGNORE) $search A simple string to search for
+     * @param string $firstinitial  PASSTHROUGH Users whose first name starts with $firstinitial
+     * @param string $lastinitial   PASSTHROUGH Users whose last name starts with $lastinitial
+     * @param string $extraselect   An additional SQL select statement to append to the query
+     * @param array  $extraparams   Additional parameters to use for the above $extraselect
+     * @param stdClass $extracontext If specified, will include user 'extra fields'
+     *   as appropriate for current user and given context
+     * @return array Array of {@link $USER} records
+     */
+    public static function partial_get_users_listing($status= null,$sort='lastaccess', $dir='ASC', $page=0, $recordsperpage=0,
+                               $search='', $firstinitial='', $lastinitial='')
+    {
 
-    // $status = PROCTORU::VERIFIED; 
-    // echo $status;
-    // the extraselect needs to vary to allow the user to specify 'is not empty', etc
-    $proFilter  = new user_filter_profilefield('profile','Profile',1);
+        // $status = PROCTORU::VERIFIED; 
+        // echo $status;
+        // the extraselect needs to vary to allow the user to specify 'is not empty', etc
+        $proFilter  = new user_filter_profilefield('profile','Profile',1);
 
-    if(!isset($status)){
-        $extraselect = '';
-        $extraparams = array();
-    }else{
-        //figure out which field key the filter function uses for our field
-        $fieldKey       = null;
-        $fieldShortname = ProctorU::_c( 'profilefield_shortname');
-        
-        foreach($proFilter->get_profile_fields() as $k=>$sn){
+        if(!isset($status)){
+            $extraselect = '';
+            $extraparams = array();
+        } else {
+            //figure out which field key the filter function uses for our field
+            $fieldKey       = null;
+            $fieldShortname = ProctorU::_c( 'profilefield_shortname');
+            
+            foreach($proFilter->get_profile_fields() as $k=>$sn){
 
-            if($sn == $fieldShortname){
-                $fieldKey = $k;
+                if($sn == $fieldShortname){
+                    $fieldKey = $k;
+                }
             }
+            
+            if(is_null($fieldKey)){
+                throw new Exception(ProctorU::_s('profilefield_not_foud'));
+            }
+
+            $data['profile']    = $fieldKey;
+            $data['operator']   = 2;
+            $data['value']      = $status;
+
+            list($extraselect, $extraparams) = $proFilter->get_sql_filter($data);
         }
+
+        //get filter for suspended users
+        list($extraselect, $extraparams) = self::arrAddSuspendedUserFilter($extraselect, $extraparams);
         
-        if(is_null($fieldKey)){
-            throw new Exception(ProctorU::_s('profilefield_not_foud'));
-        }
-
-        $data['profile']    = $fieldKey;
-        $data['operator']   = 2;
-        $data['value']      = $status;
-
-        list($extraselect, $extraparams) = $proFilter->get_sql_filter($data);
-    }
-
-    //get filter for suspended users
-    list($extraselect, $extraparams) = self::arrAddSuspendedUserFilter($extraselect, $extraparams);
-    
-    $extracontext = context_system::instance();
-    
-    return get_users_listing($sort,$dir,$page,$recordsperpage,$search,
-            $firstinitial,$lastinitial, $extraselect, $extraparams, $extracontext);
+        $extracontext = context_system::instance();
+        
+        return get_users_listing($sort,$dir,$page,$recordsperpage,$search,
+                $firstinitial,$lastinitial, $extraselect, $extraparams, $extracontext);
     }
     
     public static function partial_get_users_listing_by_roleid($roleid){
@@ -494,4 +489,3 @@ public static function partial_get_users_listing($status= null,$sort='lastaccess
 class ProctorUException extends moodle_exception{
     
 }
-?>
