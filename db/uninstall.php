@@ -1,5 +1,7 @@
 <?php
 
+require_once $CFG->dirroot . '/local/proctoru/lib.php';
+
 function xmldb_local_proctoru_uninstall() {
     global $DB;
     $fieldid = $DB->get_field('user_info_field', 'id', 
